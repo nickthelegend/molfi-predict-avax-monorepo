@@ -10,10 +10,11 @@ import {MockUSD} from "../src/MockUSD.sol";
 // then claim a confidential (hidden-side) bet with a real BN254 ZK proof.
 //   PRIVATE_KEY=0x... forge script script/LiveDemo.s.sol --rpc-url fuji --broadcast
 contract LiveDemo is Script {
-    address constant MARKET = 0x0B484b26906015eD387Ccd99C5199fB31f5F4683;
-    address constant CBET = 0x784261E3959dE9EaA422102Ee5b67781448aAF21;
+    address constant MARKET = 0xF260A7a44c7e6868D124dFcC4F13982C2eF42f8f;
+    address constant CBET = 0xEd1db687779eE2646162b70Bd3838AF8f4EeF6B3;
     address constant MUSD = 0xADE818616EA14903278E9cE11c2BfFfa4eEB682C;
-    bytes32 constant MID = 0x3c452ecbcd4e5777da11955059dbfaa5f8a7dc38f9309e379d978a6459aaf501;
+    // seeded "molfi:BTC>=50k@now" market (DeployApp) — resolvable from Chainlink now
+    bytes32 constant MID = 0x2da6688a356970e9958ae7c7abcf23b7a544b8a43b2393cb2e09bd5c75effc21;
     uint256 constant DENOM = 10_000_000;
 
     uint256[2] A = [

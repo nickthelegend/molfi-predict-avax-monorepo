@@ -1,73 +1,79 @@
 /**
- * Molfi — deployed Stellar testnet contract IDs and market constants.
- * Network/RPC/passphrase live in ./walletKit. Override any value via VITE_* env.
- * Source of truth: molfi-contracts/deploy/testnet.env
+ * Molfi — deployed **Avalanche Fuji** contract addresses and market constants.
+ * (This module keeps its `stellar/` path + export names so the premium UI keeps
+ * compiling through the Soroban → Avalanche migration; the chain underneath is
+ * now the Fuji C-Chain.) Override any value via VITE_* env.
+ * Source of truth: molfi-contracts/script/DeployApp.s.sol
  */
 
-/** Funded public account used only as the source for read-only simulations. */
-export const READ_SOURCE =
-  (import.meta.env.VITE_READ_SOURCE as string | undefined) ??
-  "GARYSHRXEGDAQ7KVSEILMJDPT5VD5Z6T5G54VV7JRREFKSRBT24HZLYY";
+/** Fuji C-Chain network config (viem client is built from this in ./soroban). */
+export const FUJI = {
+  chainId: Number(import.meta.env.VITE_FUJI_CHAIN_ID ?? 43113),
+  rpcUrl:
+    (import.meta.env.VITE_FUJI_RPC_URL as string | undefined) ??
+    "https://api.avax-test.network/ext/bc/C/rpc",
+} as const;
 
-/** Native XLM Stellar Asset Contract (the quote asset for deposits). */
-export const NATIVE_SAC =
-  (import.meta.env.VITE_NATIVE_SAC as string | undefined) ??
-  "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC";
+/** Legacy read-source (Soroban needed a funded account to simulate). viem reads
+ * need no sender, so this is retained only for import compatibility. */
+export const READ_SOURCE = "0x0000000000000000000000000000000000000000";
 
-/** Live testnet deployment (see molfi-contracts/deploy/testnet.env). */
+/** Live Fuji deployment (see molfi-contracts/script/DeployApp.s.sol). */
 export const CONTRACTS = {
   verifier:
     (import.meta.env.VITE_VERIFIER_CONTRACT_ID as string | undefined) ??
-    "CCTJUV6I5WVOLF7DQUZ2NX6ZJD2AWCGDBCEIN2SBFOWNLZP7MYV2ZXEC",
+    "0xCA791da6e0e2DB1C5B36Eb297B2d7bE05dc01EBB",
   market:
     (import.meta.env.VITE_MARKET_CONTRACT_ID as string | undefined) ??
-    "CDDX7ELEU2XBQWYYS72BFKZN5M642EBLEA6N2X22WZTHNGXPF7YPAXP3",
-  clobSettlement:
-    (import.meta.env.VITE_CLOB_SETTLEMENT_CONTRACT_ID as string | undefined) ??
-    "CCW46B3JPRS3PRKQMQ5CT2XE623QCISXSOC2O7UVHKFQZW77KK7ZHZKQ",
-  privacyPool:
-    (import.meta.env.VITE_PRIVACY_POOL_CONTRACT_ID as string | undefined) ??
-    "CAIMKBEKKLAT2CQ2T3QY6RQLKTHGLIHIUHYDDQ4NXULTZWEGZM2OMPNN",
-  policy:
-    (import.meta.env.VITE_POLICY_CONTRACT_ID as string | undefined) ??
-    "CCIQSVQN3KONZZZEVXG6JMJM5IVZYWN54ZENVBQ6VHO3OO4Q7CTCIYOI",
-  /** mUSDC — Molfi's testnet stablecoin with an open faucet. */
-  musdc:
-    (import.meta.env.VITE_MUSDC_CONTRACT_ID as string | undefined) ??
-    "CD4J6V73L5LBHDPCDITB2SMZQK5URUFBDED5IGTEU4G6XOUYXYUBJYST",
-  /** predict-escrow — real-money pari-mutuel betting + on-chain ZK-gated bets. */
+    "0xF260A7a44c7e6868D124dFcC4F13982C2eF42f8f",
+  /** predict-escrow — real-mUSDC pari-mutuel betting + on-chain ZK-gated bets. */
   predictEscrow:
     (import.meta.env.VITE_PREDICT_ESCROW_CONTRACT_ID as string | undefined) ??
-    "CCMR7AL3QT57B7KRZQ47AH34E4OQH42JXUK6BE7SQKRVOIJKAVILURL7",
-  /** LP vault — deposit mUSDC, earn trading fees. */
-  vault:
-    (import.meta.env.VITE_VAULT_CONTRACT_ID as string | undefined) ??
-    "CBZSLDILDHVFVZ5E54Y4Z33H6AQANZYQLCB2MKOADD63BLP7VYA7VHDB",
+    "0xBeA24615324465bc0e7227AcaA1F539533165EEF",
   /** confidential-bet — hidden-side commitment notes + on-chain ZK claim. */
   confidentialBet:
     (import.meta.env.VITE_CONF_BET_CONTRACT_ID as string | undefined) ??
-    "CBJO7AZHJSS4JZFTFYHZWK7B2ZZNZ4OUQMAZ53YAJCMJB3M7HHHISJXA",
+    "0xEd1db687779eE2646162b70Bd3838AF8f4EeF6B3",
+  /** mUSDC — Molfi's testnet stablecoin with an open faucet (7 decimals). */
+  musdc:
+    (import.meta.env.VITE_MUSDC_CONTRACT_ID as string | undefined) ??
+    "0xADE818616EA14903278E9cE11c2BfFfa4eEB682C",
+  /** eERC confidential-stake token (Encrypted ERC). */
+  eercCUSD:
+    (import.meta.env.VITE_EERC_CUSD_CONTRACT_ID as string | undefined) ??
+    "0x320C389607d109B12836D6B8F507C7e87783cf82",
+  // ── legacy aliases kept for display links; escrow is the single settlement contract ──
+  clobSettlement:
+    (import.meta.env.VITE_PREDICT_ESCROW_CONTRACT_ID as string | undefined) ??
+    "0xBeA24615324465bc0e7227AcaA1F539533165EEF",
+  vault:
+    (import.meta.env.VITE_PREDICT_ESCROW_CONTRACT_ID as string | undefined) ??
+    "0xBeA24615324465bc0e7227AcaA1F539533165EEF",
 } as const;
+
+/** Chainlink BTC/USD data feed on Fuji (8 decimals) — resolves the seeded markets. */
+export const BTC_USD_FEED = "0x31CF013A08c6Ac228C94551d535d5BAfE19c602a";
 
 /** mUSDC has 7 decimals; one whole token = 1e7 base units. */
 export const MUSDC_DECIMALS = 7;
 export const PREDICT_ESCROW = CONTRACTS.predictEscrow;
 export const MUSDC_UNIT = 10_000_000;
 
-/** Outcome encoding shared by the market + clob-settlement contracts. */
+/** Outcome encoding shared by the market + escrow contracts. */
 export const OUTCOME = { YES: 0, NO: 1, INVALID: 2 } as const;
 
-/** Market lifecycle status from the `market` contract. */
+/** Market lifecycle status from the `MolfiMarket` contract. */
 export const MARKET_STATUS = { TRADING: 0, RESOLVING: 1, RESOLVED: 2 } as const;
 
-/** Seeded testnet markets (32-byte hex ids). */
+/** Seeded Fuji markets — keccak256(key) ids from DeployApp.s.sol. */
 export const MARKET_IDS = {
-  BTC: "b7c0000000000000000000000000000000000000000000000000000000000001",
-  ETH: "e7e0000000000000000000000000000000000000000000000000000000000002",
-  RAIN: "5f5a000000000000000000000000000000000000000000000000000000000003",
-  ELEC: "e1ec000000000000000000000000000000000000000000000000000000000004",
+  BTC50K_NOW: "0x2da6688a356970e9958ae7c7abcf23b7a544b8a43b2393cb2e09bd5c75effc21",
+  BTC100K_NOW: "0xbc2b192b87069436597fb4769428a7662e172a040bceccadd366b4d75a817a49",
+  BTC75K_7D: "0x6b3e03b337fdbf84d548bdb98d524f1411d19174dd0f21643a603b77452fbdc3",
+  BTC120K_7D: "0x93f2bf776adeb0695be251952ab5a2b3e46675716e53ba06d2b5648f0a2b5e54",
+  BTC90K_7D: "0x5be4aa809a08b1fed040133b76809da6f9110fc7796187cbd47a475e2f230950",
 } as const;
 
-export const EXPLORER = "https://stellar.expert/explorer/testnet";
-export const contractUrl = (id: string): string => `${EXPLORER}/contract/${id}`;
+export const EXPLORER = "https://testnet.snowtrace.io";
+export const contractUrl = (id: string): string => `${EXPLORER}/address/${id}`;
 export const txUrl = (hash: string): string => `${EXPLORER}/tx/${hash}`;

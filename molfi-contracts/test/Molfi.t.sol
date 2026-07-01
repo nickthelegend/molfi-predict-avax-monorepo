@@ -7,6 +7,7 @@ import {ConfidentialBet, IERC20, IConfidentialBetVerifier, IMolfiMarket} from ".
 import {ConfidentialBetVerifier} from "../src/ConfidentialBetVerifier.sol";
 import {MockUSD} from "../src/MockUSD.sol";
 import {MockAggregator} from "../src/MockAggregator.sol";
+import {PredictEscrow, IPredictVerifier, IMarketRef, IERC20 as IEscrowERC20} from "../src/PredictEscrow.sol";
 
 // Uses the REAL Groth16 proof (BN254) exported from molfi-circuits
 // (build/confidential_bet/calldata.txt) to prove the on-chain confidential-bet
@@ -108,5 +109,51 @@ contract MolfiTest is Test {
         vm.warp(block.timestamp + 120); // feed now stale (>60s)
         vm.expectRevert(MolfiMarket.StalePrice.selector);
         market.resolveFromOracle(MID);
+    }
+
+    function test_MarketEnumeration() public {
+        market.createPriceMarket(MID, "Q?", uint64(block.timestamp + 1), address(feed), int256(60000e8), 0, 3600);
+        assertEq(market.markets().length, 1);
+        (string memory q,, uint8 status,) = market.getMarket(MID);
+        assertEq(q, "Q?");
+        assertEq(status, 0); // Trading
+    }
+
+    // ── PredictEscrow: public pari-mutuel bet + redeem ──────────────────────────
+    function test_PredictEscrowPariMutuel() public {
+        PredictEscrow esc = new PredictEscrow(
+            IEscrowERC20(address(musd)), IPredictVerifier(address(verifier)), IMarketRef(address(market)), address(0)
+        );
+        address alice = address(0xA11CE);
+        address bob = address(0xB0B);
+        musd.mint(alice, 100 * DENOM);
+        musd.mint(bob, 100 * DENOM);
+
+        // Alice bets 30 on YES(0), Bob bets 10 on NO(1)
+        vm.startPrank(alice);
+        musd.approve(address(esc), 30 * DENOM);
+        esc.bet(MID, 0, 30 * DENOM);
+        vm.stopPrank();
+        vm.startPrank(bob);
+        musd.approve(address(esc), 10 * DENOM);
+        esc.bet(MID, 1, 10 * DENOM);
+        vm.stopPrank();
+
+        assertEq(esc.total(MID), 40 * DENOM);
+        assertEq(esc.pool(MID, 0), 30 * DENOM);
+
+        // resolve YES from Chainlink (BTC $65k >= $60k)
+        market.createPriceMarket(MID, "q", uint64(block.timestamp), address(feed), int256(60000e8), 0, 3600);
+        market.resolveFromOracle(MID);
+
+        // Alice (sole YES bettor) redeems the whole 40 pool minus 2% fee
+        uint256 before = musd.balanceOf(alice);
+        esc.redeem(MID, alice);
+        uint256 got = musd.balanceOf(alice) - before;
+        assertEq(got, (40 * DENOM * 9800) / 10_000, "40 pool minus 2% fee");
+
+        // Bob (loser) can't redeem
+        vm.expectRevert(PredictEscrow.NoWinningPosition.selector);
+        esc.redeem(MID, bob);
     }
 }

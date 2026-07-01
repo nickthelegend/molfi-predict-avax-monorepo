@@ -70,8 +70,9 @@ rejected), using a real BN254 proof.
 
 | Contract | Address |
 |---|---|
-| `MolfiMarket` (Chainlink-resolved) | [`0x0B484b26906015eD387Ccd99C5199fB31f5F4683`](https://testnet.snowtrace.io/address/0x0B484b26906015eD387Ccd99C5199fB31f5F4683) |
-| `ConfidentialBet` (hidden side + ZK claim) | [`0x784261E3959dE9EaA422102Ee5b67781448aAF21`](https://testnet.snowtrace.io/address/0x784261E3959dE9EaA422102Ee5b67781448aAF21) |
+| `MolfiMarket` (Chainlink-resolved, enumerable) | [`0xF260A7a44c7e6868D124dFcC4F13982C2eF42f8f`](https://testnet.snowtrace.io/address/0xF260A7a44c7e6868D124dFcC4F13982C2eF42f8f) |
+| `PredictEscrow` (real-mUSDC pari-mutuel + ZK-gated bets) | [`0xBeA24615324465bc0e7227AcaA1F539533165EEF`](https://testnet.snowtrace.io/address/0xBeA24615324465bc0e7227AcaA1F539533165EEF) |
+| `ConfidentialBet` (hidden side + ZK claim) | [`0xEd1db687779eE2646162b70Bd3838AF8f4EeF6B3`](https://testnet.snowtrace.io/address/0xEd1db687779eE2646162b70Bd3838AF8f4EeF6B3) |
 | Groth16 verifier (BN254) | `0xCA791da6e0e2DB1C5B36Eb297B2d7bE05dc01EBB` |
 | `mUSDC` collateral | `0xADE818616EA14903278E9cE11c2BfFfa4eEB682C` |
 | **eERC `cUSD`** (confidential stakes) | `0x320C389607d109B12836D6B8F507C7e87783cf82` |

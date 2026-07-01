@@ -13,9 +13,9 @@ import { groth16 } from "snarkjs";
 import { fileURLToPath } from "node:url";
 import { readFileSync } from "node:fs";
 
-// ── deployed molfi contracts on Fuji ─────────────────────────────────────────
-const MARKET = "0x0B484b26906015eD387Ccd99C5199fB31f5F4683";
-const CBET = "0x784261E3959dE9EaA422102Ee5b67781448aAF21";
+// ── deployed molfi contracts on Fuji (shared with the molfi-app deployment) ───
+const MARKET = "0xF260A7a44c7e6868D124dFcC4F13982C2eF42f8f";
+const CBET = "0xEd1db687779eE2646162b70Bd3838AF8f4EeF6B3";
 const MUSD = "0xADE818616EA14903278E9cE11c2BfFfa4eEB682C";
 const BTC_USD = "0x31CF013A08c6Ac228C94551d535d5BAfE19c602a"; // Chainlink BTC/USD (Fuji)
 const DENOM = 10_000_000n;

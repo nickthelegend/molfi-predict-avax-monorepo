@@ -44,8 +44,9 @@ all five steps live on Fuji and prints the Snowtrace transactions. It uses only
 `molfi-circuits/build/confidential_bet/`.
 
 ## Contracts (Fuji 43113)
-- `MolfiMarket` `0x0B484b26906015eD387Ccd99C5199fB31f5F4683` — Chainlink-resolved markets
-- `ConfidentialBet` `0x784261E3959dE9EaA422102Ee5b67781448aAF21` — hidden-side bets + ZK claim
+- `MolfiMarket` `0xF260A7a44c7e6868D124dFcC4F13982C2eF42f8f` — Chainlink-resolved markets (enumerable)
+- `PredictEscrow` `0xBeA24615324465bc0e7227AcaA1F539533165EEF` — real-mUSDC pari-mutuel + ZK-gated bets
+- `ConfidentialBet` `0xEd1db687779eE2646162b70Bd3838AF8f4EeF6B3` — hidden-side bets + ZK claim
 - Groth16 verifier `0xCA791da6e0e2DB1C5B36Eb297B2d7bE05dc01EBB`
 - `mUSDC` `0xADE818616EA14903278E9cE11c2BfFfa4eEB682C` · eERC `cUSD` `0x320C389607d109B12836D6B8F507C7e87783cf82`
 - Chainlink BTC/USD feed `0x31CF013A08c6Ac228C94551d535d5BAfE19c602a`

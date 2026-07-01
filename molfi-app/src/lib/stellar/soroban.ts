@@ -1,109 +1,169 @@
 /**
- * Soroban contract calls from the browser — reads via simulation, writes signed
- * by the connected Stellar wallet (Stellar Wallets Kit). This is Molfi's on-chain
- * layer; it replaces the Sui DeepBook Predict client.
+ * Molfi on-chain layer — **Avalanche Fuji** (viem).
  *
- * Contracts (testnet): market (lifecycle), clob-settlement (accounts/positions/
- * settle/redeem), privacy-pool (ZK deposits/withdraws), verifier (Groth16).
+ * Reads go through a public client; writes are sent by a pluggable wallet client
+ * (the browser's injected wallet — Core / MetaMask — in the app, or a private-key
+ * signer in integration tests). This replaces the Soroban simulation/XDR flow
+ * while keeping every export name, so the premium Molfi UI compiles unchanged.
+ *
+ * Contracts (Fuji): MolfiMarket (Chainlink-resolved lifecycle), PredictEscrow
+ * (real-mUSDC pari-mutuel + on-chain ZK-gated bets), ConfidentialBet (hidden-side
+ * commitment notes + on-chain ZK claim), MockUSD (mUSDC faucet token).
  */
-import { Buffer } from "buffer";
 import {
-  rpc,
-  Contract,
-  TransactionBuilder,
-  BASE_FEE,
-  xdr,
-  scValToNative,
-  nativeToScVal,
-  Address,
-} from "@stellar/stellar-sdk";
-import { walletKit, NETWORK_PASSPHRASE, SOROBAN_RPC_URL } from "@/lib/stellar/walletKit";
-import { CONTRACTS, READ_SOURCE, MUSDC_UNIT } from "@/lib/stellar/contracts";
+  createPublicClient,
+  defineChain,
+  http,
+  getAddress,
+  parseUnits,
+  type Abi,
+  type Hex,
+  type PublicClient,
+  type WalletClient,
+} from "viem";
+import { CONTRACTS, FUJI, MUSDC_UNIT, MUSDC_DECIMALS } from "@/lib/stellar/contracts";
 
-const server = new rpc.Server(SOROBAN_RPC_URL, {
-  allowHttp: SOROBAN_RPC_URL.startsWith("http://"),
+// ---------------------------------------------------------------------------
+// Chain + clients
+// ---------------------------------------------------------------------------
+
+export const fujiChain = defineChain({
+  id: FUJI.chainId,
+  name: "Avalanche Fuji",
+  nativeCurrency: { name: "Avalanche", symbol: "AVAX", decimals: 18 },
+  rpcUrls: { default: { http: [FUJI.rpcUrl] } },
+  blockExplorers: { default: { name: "SnowTrace", url: "https://testnet.snowtrace.io" } },
+  testnet: true,
 });
 
-// ---------------------------------------------------------------------------
-// ScVal argument helpers
-// ---------------------------------------------------------------------------
+export const publicClient: PublicClient = createPublicClient({
+  chain: fujiChain,
+  transport: http(FUJI.rpcUrl),
+});
 
-/** 32-byte hex → ScVal bytes (e.g. a market id). */
-export const bytesArg = (hex: string): xdr.ScVal =>
-  nativeToScVal(Buffer.from(hex, "hex"), { type: "bytes" });
+/** The wallet client used to send writes. Set by the wallet layer on connect
+ * (browser injected wallet) or by an integration test (private-key signer). */
+let _wallet: WalletClient | null = null;
+let _account: `0x${string}` | null = null;
 
-export const addressArg = (g: string): xdr.ScVal => new Address(g).toScVal();
-export const u32Arg = (n: number): xdr.ScVal => nativeToScVal(n, { type: "u32" });
-export const i128Arg = (n: bigint): xdr.ScVal => nativeToScVal(n, { type: "i128" });
-
-const toHex = (u: Uint8Array): string =>
-  Array.from(u, (b) => b.toString(16).padStart(2, "0")).join("");
-
-// ---------------------------------------------------------------------------
-// Generic read / write
-// ---------------------------------------------------------------------------
-
-/** Read-only call: simulate and decode the return value. */
-export async function readContract(
-  sourceAddress: string,
-  contractId: string,
-  method: string,
-  args: xdr.ScVal[] = [],
-): Promise<unknown> {
-  const account = await server.getAccount(sourceAddress);
-  const tx = new TransactionBuilder(account, {
-    fee: BASE_FEE,
-    networkPassphrase: NETWORK_PASSPHRASE,
-  })
-    .addOperation(new Contract(contractId).call(method, ...args))
-    .setTimeout(30)
-    .build();
-
-  const sim = await server.simulateTransaction(tx);
-  if (rpc.Api.isSimulationError(sim)) {
-    throw new Error(sim.error);
-  }
-  const retval = sim.result?.retval;
-  return retval ? scValToNative(retval) : null;
+export function setWalletClient(wc: WalletClient | null, account?: `0x${string}`): void {
+  _wallet = wc;
+  _account = account ?? (wc?.account?.address as `0x${string}` | undefined) ?? null;
 }
 
-/** State-changing call: prepare, sign with the connected wallet, submit, await success. */
-export async function writeContract(
-  walletAddress: string,
-  contractId: string,
-  method: string,
-  args: xdr.ScVal[] = [],
-): Promise<string> {
-  const account = await server.getAccount(walletAddress);
-  const built = new TransactionBuilder(account, {
-    fee: BASE_FEE,
-    networkPassphrase: NETWORK_PASSPHRASE,
-  })
-    .addOperation(new Contract(contractId).call(method, ...args))
-    .setTimeout(60)
-    .build();
+function requireWallet(): { wallet: WalletClient; account: `0x${string}` } {
+  if (!_wallet || !_account) throw new Error("Wallet not connected");
+  return { wallet: _wallet, account: _account };
+}
 
-  const prepared = await server.prepareTransaction(built);
-  const { signedTxXdr } = await walletKit.signTransaction(prepared.toXDR(), {
-    address: walletAddress,
-    networkPassphrase: NETWORK_PASSPHRASE,
+// ---------------------------------------------------------------------------
+// ABIs (minimal — only what the app calls)
+// ---------------------------------------------------------------------------
+
+const MUSDC_ABI = [
+  { type: "function", name: "mint", stateMutability: "nonpayable", inputs: [{ type: "address" }, { type: "uint256" }], outputs: [] },
+  { type: "function", name: "balanceOf", stateMutability: "view", inputs: [{ type: "address" }], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "approve", stateMutability: "nonpayable", inputs: [{ type: "address" }, { type: "uint256" }], outputs: [{ type: "bool" }] },
+  { type: "function", name: "allowance", stateMutability: "view", inputs: [{ type: "address" }, { type: "address" }], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "transfer", stateMutability: "nonpayable", inputs: [{ type: "address" }, { type: "uint256" }], outputs: [{ type: "bool" }] },
+] as const satisfies Abi;
+
+const MARKET_ABI = [
+  { type: "function", name: "markets", stateMutability: "view", inputs: [], outputs: [{ type: "bytes32[]" }] },
+  { type: "function", name: "getMarket", stateMutability: "view", inputs: [{ type: "bytes32" }], outputs: [{ type: "string" }, { type: "uint64" }, { type: "uint8" }, { type: "uint32" }] },
+  { type: "function", name: "isResolved", stateMutability: "view", inputs: [{ type: "bytes32" }], outputs: [{ type: "bool" }] },
+  { type: "function", name: "winningOutcome", stateMutability: "view", inputs: [{ type: "bytes32" }], outputs: [{ type: "uint32" }] },
+  { type: "function", name: "resolveFromOracle", stateMutability: "nonpayable", inputs: [{ type: "bytes32" }], outputs: [] },
+] as const satisfies Abi;
+
+const ESCROW_ABI = [
+  { type: "function", name: "bet", stateMutability: "nonpayable", inputs: [{ type: "bytes32" }, { type: "uint32" }, { type: "uint256" }], outputs: [] },
+  { type: "function", name: "betZk", stateMutability: "nonpayable", inputs: [{ type: "bytes32" }, { type: "uint32" }, { type: "uint256" }, { type: "uint256[2]" }, { type: "uint256[2][2]" }, { type: "uint256[2]" }, { type: "uint256[4]" }], outputs: [] },
+  { type: "function", name: "redeem", stateMutability: "nonpayable", inputs: [{ type: "bytes32" }, { type: "address" }], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "pool", stateMutability: "view", inputs: [{ type: "bytes32" }, { type: "uint32" }], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "total", stateMutability: "view", inputs: [{ type: "bytes32" }], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "position", stateMutability: "view", inputs: [{ type: "bytes32" }, { type: "uint32" }, { type: "address" }], outputs: [{ type: "uint256" }] },
+] as const satisfies Abi;
+
+const CBET_ABI = [
+  { type: "function", name: "commit", stateMutability: "nonpayable", inputs: [{ type: "uint256" }], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "claim", stateMutability: "nonpayable", inputs: [{ type: "bytes32" }, { type: "uint256[2]" }, { type: "uint256[2][2]" }, { type: "uint256[2]" }, { type: "uint256" }, { type: "uint256" }, { type: "address" }], outputs: [] },
+] as const satisfies Abi;
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+const asHex = (h: string): Hex => (h.startsWith("0x") ? (h as Hex) : (`0x${h}` as Hex));
+const toBase = (amountUsdc: number): bigint => parseUnits(String(amountUsdc), MUSDC_DECIMALS);
+const bigHex = (h: string): bigint => BigInt(asHex(h));
+
+/** Convert a proof (snarkjs pi_* form, or {a,b,c} as hex/decimal string arrays)
+ * into the Solidity Groth16 calldata shape the on-chain verifier expects. */
+type RawProof =
+  | { pi_a: string[]; pi_b: string[][]; pi_c: string[] }
+  | { a: string | string[]; b: string | string[][]; c: string | string[] };
+
+function toSolProof(p: RawProof): {
+  a: [bigint, bigint];
+  b: [[bigint, bigint], [bigint, bigint]];
+  c: [bigint, bigint];
+} {
+  if ("pi_a" in p) {
+    return {
+      a: [BigInt(p.pi_a[0]), BigInt(p.pi_a[1])],
+      // snarkjs G2 coordinates are swapped relative to the EVM verifier.
+      b: [
+        [BigInt(p.pi_b[0][1]), BigInt(p.pi_b[0][0])],
+        [BigInt(p.pi_b[1][1]), BigInt(p.pi_b[1][0])],
+      ],
+      c: [BigInt(p.pi_c[0]), BigInt(p.pi_c[1])],
+    };
+  }
+  const a = Array.isArray(p.a) ? p.a : [];
+  const b = Array.isArray(p.b) ? (p.b as string[][]) : [];
+  const c = Array.isArray(p.c) ? p.c : [];
+  return {
+    a: [BigInt(a[0]), BigInt(a[1])],
+    b: [
+      [BigInt(b[0][0]), BigInt(b[0][1])],
+      [BigInt(b[1][0]), BigInt(b[1][1])],
+    ],
+    c: [BigInt(c[0]), BigInt(c[1])],
+  };
+}
+
+async function read<T>(address: string, abi: Abi, functionName: string, args: readonly unknown[] = []): Promise<T> {
+  return (await publicClient.readContract({
+    address: getAddress(address),
+    abi,
+    functionName,
+    args: args as never,
+  })) as T;
+}
+
+async function send(address: string, abi: Abi, functionName: string, args: readonly unknown[]): Promise<string> {
+  const { wallet, account } = requireWallet();
+  const hash = await wallet.writeContract({
+    address: getAddress(address),
+    abi,
+    functionName,
+    args: args as never,
+    // Use the client's configured account: a local key signs + broadcasts via
+    // eth_sendRawTransaction (tests), an injected-wallet address signs via the
+    // provider's eth_sendTransaction (browser).
+    account: wallet.account ?? account,
+    chain: fujiChain,
   });
+  await publicClient.waitForTransactionReceipt({ hash });
+  return hash;
+}
 
-  const signed = TransactionBuilder.fromXDR(signedTxXdr, NETWORK_PASSPHRASE);
-  const sent = await server.sendTransaction(signed);
-  if (sent.status === "ERROR") {
-    throw new Error(`submit failed: ${JSON.stringify(sent.errorResult)}`);
-  }
-
-  let got = await server.getTransaction(sent.hash);
-  for (let i = 0; i < 30 && got.status === "NOT_FOUND"; i++) {
-    await new Promise((r) => setTimeout(r, 1000));
-    got = await server.getTransaction(sent.hash);
-  }
-  if (got.status !== "SUCCESS") {
-    throw new Error(`transaction ${got.status}: ${sent.hash}`);
-  }
-  return sent.hash;
+/** Approve `spender` to pull at least `amount` mUSDC from `owner` (idempotent). */
+async function ensureAllowance(owner: string, spender: string, amount: bigint): Promise<void> {
+  const current = await read<bigint>(CONTRACTS.musdc, MUSDC_ABI, "allowance", [getAddress(owner), getAddress(spender)]);
+  if (current >= amount) return;
+  await send(CONTRACTS.musdc, MUSDC_ABI, "approve", [getAddress(spender), 2n ** 256n - 1n]);
 }
 
 // ---------------------------------------------------------------------------
@@ -120,13 +180,10 @@ export interface OnChainMarket {
 
 /** Enumerate all markets and fetch each one's state. */
 export async function listMarkets(): Promise<OnChainMarket[]> {
-  const ids = (await readContract(READ_SOURCE, CONTRACTS.market, "markets")) as
-    | Uint8Array[]
-    | null;
+  const ids = await read<readonly Hex[]>(CONTRACTS.market, MARKET_ABI, "markets");
   const out: OnChainMarket[] = [];
-  for (const idBytes of ids ?? []) {
-    const hex = toHex(idBytes);
-    const m = await getMarket(hex).catch(() => null);
+  for (const id of ids ?? []) {
+    const m = await getMarket(id).catch(() => null);
     if (m) out.push(m);
   }
   return out;
@@ -134,108 +191,51 @@ export async function listMarkets(): Promise<OnChainMarket[]> {
 
 /** Fetch a single market's state by 32-byte hex id. */
 export async function getMarket(idHex: string): Promise<OnChainMarket> {
-  const m = (await readContract(READ_SOURCE, CONTRACTS.market, "get_market", [
-    bytesArg(idHex),
-  ])) as {
-    question: string;
-    close_ts: bigint | number;
-    status: bigint | number;
-    outcome: bigint | number;
-  };
+  const [question, closeTs, status, outcome] = await read<[string, bigint, number, number]>(
+    CONTRACTS.market,
+    MARKET_ABI,
+    "getMarket",
+    [asHex(idHex)],
+  );
   return {
-    id: idHex,
-    question: m.question,
-    closeTs: Number(m.close_ts),
-    status: Number(m.status),
-    outcome: Number(m.outcome),
+    id: asHex(idHex),
+    question,
+    closeTs: Number(closeTs),
+    status: Number(status),
+    outcome: Number(outcome),
   };
 }
 
 export async function isResolved(idHex: string): Promise<boolean> {
-  return Boolean(
-    await readContract(READ_SOURCE, CONTRACTS.market, "is_resolved", [bytesArg(idHex)]),
-  );
+  return read<boolean>(CONTRACTS.market, MARKET_ABI, "isResolved", [asHex(idHex)]);
 }
 
-/** Winning outcome (0 YES / 1 NO / 2 INVALID) for a resolved market. */
+/** Winning outcome (0 YES / 1 NO) for a resolved market. */
 export async function winningOutcome(idHex: string): Promise<number> {
-  return Number(
-    await readContract(READ_SOURCE, CONTRACTS.market, "winning_outcome", [bytesArg(idHex)]),
-  );
+  return Number(await read<number>(CONTRACTS.market, MARKET_ABI, "winningOutcome", [asHex(idHex)]));
 }
 
-// ---------------------------------------------------------------------------
-// CLOB settlement contract (accounts, positions, redeem)
-// ---------------------------------------------------------------------------
-
-/** Internal account balance (quote atoms) held in the settlement contract. */
-export async function balance(trader: string): Promise<bigint> {
-  const v = await readContract(READ_SOURCE, CONTRACTS.clobSettlement, "balance", [
-    addressArg(trader),
-  ]);
-  return BigInt((v as bigint | number | null) ?? 0);
-}
-
-/** Shares a holder owns on a given market outcome. */
-export async function position(
-  holder: string,
-  marketHex: string,
-  outcome: number,
-): Promise<bigint> {
-  const v = await readContract(READ_SOURCE, CONTRACTS.clobSettlement, "position", [
-    addressArg(holder),
-    bytesArg(marketHex),
-    u32Arg(outcome),
-  ]);
-  return BigInt((v as bigint | number | null) ?? 0);
-}
-
-/** Total escrow locked for a market. */
-export async function escrow(marketHex: string): Promise<bigint> {
-  const v = await readContract(READ_SOURCE, CONTRACTS.clobSettlement, "escrow", [
-    bytesArg(marketHex),
-  ]);
-  return BigInt((v as bigint | number | null) ?? 0);
-}
-
-/** Deposit quote funds into the settlement account (signed by the trader). */
-export async function deposit(trader: string, amount: bigint): Promise<string> {
-  return writeContract(trader, CONTRACTS.clobSettlement, "deposit", [
-    addressArg(trader),
-    i128Arg(amount),
-  ]);
-}
-
-/** Redeem winning shares after resolution; returns the payout tx hash. */
-export async function redeem(
-  holder: string,
-  marketHex: string,
-  shares: bigint,
-): Promise<string> {
-  return writeContract(holder, CONTRACTS.clobSettlement, "redeem", [
-    addressArg(holder),
-    bytesArg(marketHex),
-    i128Arg(shares),
-  ]);
+/** Permissionlessly settle an oracle market after close (reads the Chainlink feed). */
+export async function resolveFromOracle(walletAddress: string, idHex: string): Promise<string> {
+  return send(CONTRACTS.market, MARKET_ABI, "resolveFromOracle", [asHex(idHex)]);
 }
 
 // ---------------------------------------------------------------------------
 // mUSDC token + faucet
 // ---------------------------------------------------------------------------
 
-/** Claim test mUSDC to `to` (open faucet, signed by the connected wallet). */
+/** Faucet mint (1,000 mUSDC) — MockUSD has an open mint. */
 export async function faucet(to: string): Promise<string> {
-  return writeContract(to, CONTRACTS.musdc, "faucet", [addressArg(to)]);
+  return send(CONTRACTS.musdc, MUSDC_ABI, "mint", [getAddress(to), 1000n * BigInt(MUSDC_UNIT)]);
 }
 
 /** mUSDC balance (base units) for an address. */
 export async function musdcBalance(addr: string): Promise<bigint> {
-  const v = await readContract(READ_SOURCE, CONTRACTS.musdc, "balance", [addressArg(addr)]);
-  return BigInt((v as bigint | number | null) ?? 0);
+  return read<bigint>(CONTRACTS.musdc, MUSDC_ABI, "balanceOf", [getAddress(addr)]);
 }
 
 // ---------------------------------------------------------------------------
-// predict-escrow (real mUSDC bet escrow + pari-mutuel payout)
+// PredictEscrow (real-mUSDC pari-mutuel bet + payout)
 // ---------------------------------------------------------------------------
 
 /** Escrow `amountUsdc` mUSDC on an outcome (0=YES, 1=NO) of an on-chain market. */
@@ -245,151 +245,106 @@ export async function escrowBet(
   outcome: number,
   amountUsdc: number,
 ): Promise<string> {
-  return writeContract(walletAddress, CONTRACTS.predictEscrow, "bet", [
-    bytesArg(marketIdHex),
-    addressArg(walletAddress),
-    u32Arg(outcome),
-    i128Arg(BigInt(Math.round(amountUsdc * MUSDC_UNIT))),
-  ]);
+  const amount = toBase(amountUsdc);
+  await ensureAllowance(walletAddress, CONTRACTS.predictEscrow, amount);
+  return send(CONTRACTS.predictEscrow, ESCROW_ABI, "bet", [asHex(marketIdHex), outcome, amount]);
 }
 
 /** Claim winnings on a resolved on-chain market. */
 export async function escrowRedeem(walletAddress: string, marketIdHex: string): Promise<string> {
-  return writeContract(walletAddress, CONTRACTS.predictEscrow, "redeem", [
-    bytesArg(marketIdHex),
-    addressArg(walletAddress),
-  ]);
+  return send(CONTRACTS.predictEscrow, ESCROW_ABI, "redeem", [asHex(marketIdHex), getAddress(walletAddress)]);
 }
 
 /** A wallet's escrowed stake (base units) on (market, outcome). */
-export async function escrowPosition(
-  marketIdHex: string,
-  outcome: number,
-  who: string,
-): Promise<bigint> {
-  const v = await readContract(who, CONTRACTS.predictEscrow, "position", [
-    bytesArg(marketIdHex),
-    u32Arg(outcome),
-    addressArg(who),
-  ]);
-  return BigInt((v as bigint | number | null) ?? 0);
+export async function escrowPosition(marketIdHex: string, outcome: number, who: string): Promise<bigint> {
+  return read<bigint>(CONTRACTS.predictEscrow, ESCROW_ABI, "position", [asHex(marketIdHex), outcome, getAddress(who)]);
 }
 
 /** Total mUSDC (base units) escrowed across both sides of a market. */
 export async function escrowTotal(marketIdHex: string): Promise<bigint> {
-  const v = await readContract(READ_SOURCE, CONTRACTS.predictEscrow, "total", [
-    bytesArg(marketIdHex),
-  ]);
-  return BigInt((v as bigint | number | null) ?? 0);
+  return read<bigint>(CONTRACTS.predictEscrow, ESCROW_ABI, "total", [asHex(marketIdHex)]);
 }
 
 /** Total mUSDC (base units) escrowed on one outcome (the real on-chain pool). */
 export async function escrowPool(marketIdHex: string, outcome: number): Promise<bigint> {
-  const v = await readContract(READ_SOURCE, CONTRACTS.predictEscrow, "pool", [
-    bytesArg(marketIdHex),
-    u32Arg(outcome),
-  ]);
-  return BigInt((v as bigint | number | null) ?? 0);
+  return read<bigint>(CONTRACTS.predictEscrow, ESCROW_ABI, "pool", [asHex(marketIdHex), outcome]);
 }
-
-// ---------------------------------------------------------------------------
-// LP vault (deposit mUSDC on-chain, earn trading fees)
-// ---------------------------------------------------------------------------
 
 /**
  * Privacy bet: escrow `amountUsdc` mUSDC on `outcome`, gated by a Groth16 proof
- * that the `verifier` contract checks ON-CHAIN before the escrow accepts it (the
- * proof's nullifier is burned, single-use). The proof comes from the backend ZK
- * service. Wallet-signed.
+ * the escrow verifies ON-CHAIN before accepting (its nullifier is burned,
+ * single-use). Public signals `[root, nullifierHash, outcome, recipient]`.
  */
 export async function escrowBetZk(
   walletAddress: string,
   marketIdHex: string,
   outcome: number,
   amountUsdc: number,
-  proof: { a: string; b: string; c: string },
+  proof: RawProof,
   publicInputs: string[],
-  domain: string,
+  _domain: string,
 ): Promise<string> {
-  // The Proof struct must be a map with SYMBOL keys (a,b,c) — nativeToScVal on a
-  // plain object emits string keys, which the contract rejects (UnexpectedType).
-  const proofBytes = (hex: string) => nativeToScVal(Buffer.from(hex, "hex"), { type: "bytes" });
-  const proofScVal = xdr.ScVal.scvMap([
-    new xdr.ScMapEntry({ key: xdr.ScVal.scvSymbol("a"), val: proofBytes(proof.a) }),
-    new xdr.ScMapEntry({ key: xdr.ScVal.scvSymbol("b"), val: proofBytes(proof.b) }),
-    new xdr.ScMapEntry({ key: xdr.ScVal.scvSymbol("c"), val: proofBytes(proof.c) }),
-  ]);
-  const piScVal = nativeToScVal(publicInputs.map((h) => Buffer.from(h, "hex")));
-  return writeContract(walletAddress, CONTRACTS.predictEscrow, "bet_zk", [
-    bytesArg(marketIdHex),
-    addressArg(walletAddress),
-    u32Arg(outcome),
-    i128Arg(BigInt(Math.round(amountUsdc * MUSDC_UNIT))),
-    proofScVal,
-    piScVal,
-    bytesArg(domain),
-  ]);
+  const amount = toBase(amountUsdc);
+  await ensureAllowance(walletAddress, CONTRACTS.predictEscrow, amount);
+  const { a, b, c } = toSolProof(proof);
+  const pub = [bigHex(publicInputs[0]), bigHex(publicInputs[1]), bigHex(publicInputs[2]), bigHex(publicInputs[3])];
+  return send(CONTRACTS.predictEscrow, ESCROW_ABI, "betZk", [asHex(marketIdHex), outcome, amount, a, b, c, pub]);
 }
 
-/** Deposit `amountUsdc` mUSDC into the on-chain LP vault (wallet-signed). */
-export async function vaultDepositOnChain(
-  walletAddress: string,
-  amountUsdc: number,
-): Promise<string> {
-  return writeContract(walletAddress, CONTRACTS.vault, "deposit", [
-    addressArg(walletAddress),
-    i128Arg(BigInt(Math.round(amountUsdc * MUSDC_UNIT))),
-  ]);
+/** Deposit `amountUsdc` mUSDC into the fee vault (funds the escrow's LP pot). */
+export async function vaultDepositOnChain(walletAddress: string, amountUsdc: number): Promise<string> {
+  const amount = toBase(amountUsdc);
+  return send(CONTRACTS.musdc, MUSDC_ABI, "transfer", [getAddress(CONTRACTS.vault), amount]);
 }
 
 // ---------------------------------------------------------------------------
-// confidential-bet (hidden-side commitment notes + on-chain ZK claim)
+// ConfidentialBet (hidden-side commitment notes + on-chain ZK claim)
 // ---------------------------------------------------------------------------
 
 /**
  * Escrow one fixed-denomination (100 mUSDC) commitment note. The `commitment` is
  * a binding hash of an off-chain note (secret, nullifier, chosen side) — nothing
  * on-chain reveals which outcome it backs, and the uniform denom hides the amount.
- * Wallet-signed (the wallet authorizes the mUSDC transfer in the same tx).
  */
-export async function confidentialCommit(
-  walletAddress: string,
-  commitmentHex: string,
-): Promise<string> {
-  return writeContract(walletAddress, CONTRACTS.confidentialBet, "commit", [
-    addressArg(walletAddress),
-    bytesArg(commitmentHex),
-  ]);
+export async function confidentialCommit(walletAddress: string, commitmentHex: string): Promise<string> {
+  // ConfidentialBet.commit pulls one denom of mUSDC from the sender.
+  await ensureAllowance(walletAddress, CONTRACTS.confidentialBet, 100n * BigInt(MUSDC_UNIT));
+  return send(CONTRACTS.confidentialBet, CBET_ABI, "commit", [bigHex(commitmentHex)]);
 }
 
 /**
- * Claim a winning confidential note. The proof (from the backend) is verified
- * ON-CHAIN: the contract injects the resolved winning outcome as a public input,
- * so only a note that backed the winner verifies. The nullifier is burned
- * (single-use) and `PAYOUT_MULT × denom` mUSDC is paid to the wallet — unlinkable
- * to the deposit. `claim` needs no auth, but the wallet is the source + recipient.
+ * Claim a winning confidential note. The proof is verified ON-CHAIN: the contract
+ * injects the resolved winning outcome as a public input, so only a note that
+ * backed the winner verifies. The nullifier is burned (single-use) and the payout
+ * is paid to the wallet — unlinkable to the deposit.
  */
 export async function confidentialClaim(
   walletAddress: string,
   marketIdHex: string,
-  proof: { a: string; b: string; c: string },
+  proof: RawProof,
   nullifierHashHex: string,
-  recipientFieldHex: string,
+  _recipientFieldHex: string,
   rootHex: string,
 ): Promise<string> {
-  const pb = (hex: string) => nativeToScVal(Buffer.from(hex, "hex"), { type: "bytes" });
-  const proofScVal = xdr.ScVal.scvMap([
-    new xdr.ScMapEntry({ key: xdr.ScVal.scvSymbol("a"), val: pb(proof.a) }),
-    new xdr.ScMapEntry({ key: xdr.ScVal.scvSymbol("b"), val: pb(proof.b) }),
-    new xdr.ScMapEntry({ key: xdr.ScVal.scvSymbol("c"), val: pb(proof.c) }),
-  ]);
-  // claim(market_id, proof, nullifier_hash, recipient, recipient_field, root)
-  return writeContract(walletAddress, CONTRACTS.confidentialBet, "claim", [
-    bytesArg(marketIdHex),
-    proofScVal,
-    bytesArg(nullifierHashHex),
-    addressArg(walletAddress),
-    bytesArg(recipientFieldHex),
-    bytesArg(rootHex),
+  const { a, b, c } = toSolProof(proof);
+  return send(CONTRACTS.confidentialBet, CBET_ABI, "claim", [
+    asHex(marketIdHex),
+    a,
+    b,
+    c,
+    bigHex(rootHex),
+    bigHex(nullifierHashHex),
+    getAddress(walletAddress),
   ]);
 }
+
+// ---------------------------------------------------------------------------
+// Legacy clob aliases (retained for import compatibility; escrow is the single
+// settlement contract on Avalanche).
+// ---------------------------------------------------------------------------
+
+export const balance = (trader: string): Promise<bigint> => musdcBalance(trader);
+export const position = (holder: string, marketHex: string, outcome: number): Promise<bigint> =>
+  escrowPosition(marketHex, outcome, holder);
+export const escrow = (marketHex: string): Promise<bigint> => escrowTotal(marketHex);
+export const redeem = (holder: string, marketHex: string): Promise<string> => escrowRedeem(holder, marketHex);

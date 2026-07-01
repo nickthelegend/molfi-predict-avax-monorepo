@@ -8,6 +8,7 @@ export interface MolfiContracts {
   verifier: string;
   market: string;
   confidentialBet: string;
+  predictEscrow: string; // real-mUSDC pari-mutuel betting + on-chain ZK-gated bets
 }
 
 export interface MolfiConfig {
@@ -37,8 +38,9 @@ export const config: MolfiConfig = {
     mUSDC: env("MOLFI_MUSDC", "0xADE818616EA14903278E9cE11c2BfFfa4eEB682C"),
     eERC_cUSD: env("MOLFI_EERC", "0x320C389607d109B12836D6B8F507C7e87783cf82"),
     verifier: env("MOLFI_VERIFIER", "0xCA791da6e0e2DB1C5B36Eb297B2d7bE05dc01EBB"),
-    market: env("MOLFI_MARKET", "0x0B484b26906015eD387Ccd99C5199fB31f5F4683"),
-    confidentialBet: env("MOLFI_CBET", "0x784261E3959dE9EaA422102Ee5b67781448aAF21"),
+    market: env("MOLFI_MARKET", "0xF260A7a44c7e6868D124dFcC4F13982C2eF42f8f"),
+    confidentialBet: env("MOLFI_CBET", "0xEd1db687779eE2646162b70Bd3838AF8f4EeF6B3"),
+    predictEscrow: env("MOLFI_ESCROW", "0xBeA24615324465bc0e7227AcaA1F539533165EEF"),
   },
   feeds: {
     "BTC/USD": "0x31CF013A08c6Ac228C94551d535d5BAfE19c602a",
