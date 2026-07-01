@@ -1,0 +1,24 @@
+=== ZK confidential-withdrawal flow (2026-06-28T19:55:55Z) ===
+[verifier.verify (real Groth16 proof)]
+  tx:     NONE
+  result: ?
+[privacy_pool.deposit (10 XLM)]
+  tx:     28625d34973129ca6059f92d70156e3ae0319ede152c2910f81940886a1fc44b
+  result: Success - Event: [{"symbol":"transfer"},{"address":"GARYSHRXEGDAQ7KVSEILMJDPT5VD5Z6T5G54VV7JRREFKSRBT24HZLYY"},{"address":"CAIMKBEKKLAT2CQ2T3QY6RQLKTHGLIHIUHYDD
+[privacy_pool.register_root]
+  tx:     afcb8a5a02b3e994240074271dae404b848dbe158d1b6a7d7fad493174b27331
+  result: ?
+[privacy_pool.withdraw (proof-gated)]
+  tx:     8b192ff100e37f08959155bcb4d4c4e20437a5d5e96280c8ca98f602f358f585
+  result: Success - Event: [{"symbol":"transfer"},{"address":"CAIMKBEKKLAT2CQ2T3QY6RQLKTHGLIHIUHYDDQ4NXULTZWEGZM2OMPNN"},{"address":"GARYSHRXEGDAQ7KVSEILMJDPT5VD5Z6T5G54V
+=== done ===
+[verifier.verify (real Groth16 proof, on-chain)]
+  tx:     ed9a59c3d855269c2736497b7e6f8a1bf612f137f64c979ab5c6488aabeec221
+  result: true
+=== market lifecycle (2026-06-28T19:57:22Z) ===
+[market.resolve (YES)]
+  tx:     83a221c1c9b14afc92c95f6291718a94a20dcaa76f834d9ca6a8f43f4cddf903
+  result: Success - Event: [{"symbol":"market"},{"symbol":"resolved"}] = {"vec":[{"bytes":"b7000000000000000000000000000000000000000000000000000000000000b8"},{"u32":0}]}
+[market.winning_outcome read]
+  outcome: 0
+=== done ===

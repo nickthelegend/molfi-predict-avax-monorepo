@@ -1,0 +1,15 @@
+[package]
+name = "molfi-mock-oracle"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "SEP-40 compatible mock price oracle for Molfi demos/tests"
+
+[lib]
+crate-type = ["lib", "cdylib"]
+
+[dependencies]
+soroban-sdk = { workspace = true }
+
+[dev-dependencies]
+soroban-sdk = { workspace = true, features = ["testutils"] }

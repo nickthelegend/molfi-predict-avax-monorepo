@@ -1,0 +1,18 @@
+=== seed crypto markets (2026-06-29T19:15:42Z) ===
+[create BTC] tx=58ce43eb4feccd6c2cdc5fca6a75c25506b8ebdbe9b74623caa98d80ca7ef1ec 
+[create ETH] tx=b785240b69749ec8e749bb10e1ee39b54c9c281f2b849900790400a384ea3d65 error: transaction submission failed: TxBadSeq
+[create SOL] tx=6846e1e9c5424b5169b3704f72e782476d87d9bb22bcf19c8c6f168739183336 error: transaction submission timeout
+[create XLM] tx=NONE error: Failed to parse argument 'id': value is not parseable to Some(
+=== settlement e2e (short-close demo market) ===
+[create DEMO] tx=dec0000000000000000000000000000000000000000000000000000000000019 error: transaction simulation failed: HostError: Error(Contract, #4)
+waiting for close (45s)…
+[resolve YES] tx=dec0000000000000000000000000000000000000000000000000000000000019 error: transaction simulation failed: HostError: Error(Contract, #3)
+[verify] demo market state:
+❌ error: transaction simulation failed: HostError: Error(Contract, #3)
+
+Event log (newest first):
+   0: [Diagnostic Event] contract:CDDX7ELEU2XBQWYYS72BFKZN5M642EBLEA6N2X22WZTHNGXPF7YPAXP3, topics:[error, Error(Contract, #3)], data:"escalating Ok(ScErrorType::Contract) frame-exit to Err"
+   1: [Diagnostic Event] topics:[fn_call, CDDX7ELEU2XBQWYYS72BFKZN5M642EBLEA6N2X22WZTHNGXPF7YPAXP3, get_market], data:Bytes(dec0000000000000000000000000000000000000000000000000000000000019)
+
+=== done — markets now on-chain: ===
+count 5

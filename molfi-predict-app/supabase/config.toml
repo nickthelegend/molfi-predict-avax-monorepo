@@ -1,0 +1,7 @@
+project_id = "ohvsrapyopgbsissbvpv"
+
+[functions.market-ai-analysis]
+verify_jwt = false
+
+[functions.farcaster-frame]
+verify_jwt = false

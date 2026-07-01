@@ -1,0 +1,22 @@
+{
+  "network": "avalanche-fuji",
+  "chainId": 43113,
+  "rpc": "https://api.avax-test.network/ext/bc/C/rpc",
+  "explorer": "https://testnet.snowtrace.io",
+  "contracts": {
+    "confidentialBetVerifier": "0xCA791da6e0e2DB1C5B36Eb297B2d7bE05dc01EBB",
+    "mUSDC": "0xADE818616EA14903278E9cE11c2BfFfa4eEB682C",
+    "molfiMarket": "0x0B484b26906015eD387Ccd99C5199fB31f5F4683",
+    "confidentialBet": "0x784261E3959dE9EaA422102Ee5b67781448aAF21",
+    "eERC_cUSD": "0x320C389607d109B12836D6B8F507C7e87783cf82",
+    "eERC_registrar": "0x098561944b2437288Fe98d3F5FA824868899104a"
+  },
+  "oracles": {
+    "chainlink_BTC_USD": "0x31CF013A08c6Ac228C94551d535d5BAfE19c602a",
+    "chainlink_ETH_USD": "0x86d67c3D38D2bCeE722E601025C25a575021c6EA",
+    "chainlink_AVAX_USD": "0x5498BB86BC934c8D34FDA08E81D444153d0D06aD",
+    "chainlink_LINK_USD": "0x34C4c526902d88a3Aa98DB8a9b802603EB1E3470"
+  },
+  "operator": "0x86076053d71E1c95b3c08e68BA39049024D69E67",
+  "denom": "10000000"
+}

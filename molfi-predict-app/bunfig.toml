@@ -1,0 +1,4 @@
+[install]
+# Prevent ALL lifecycle/install scripts from running
+# This stops usb's node-gyp rebuild entirely
+trustedDependencies = []

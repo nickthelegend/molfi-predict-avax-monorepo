@@ -1,0 +1,13 @@
+=== seed remaining crypto markets (2026-06-29T19:19:42Z) ===
+[ETH] OK tx=7a2392f033a9db4e652fd8accd0ea9298f6ad30e4df7bf2b6fe130659510def7
+[SOL] OK tx=9ac2947ce388eb233abfaf942281b6f2185f256e7d1b86c3ce710a22ea9c7486
+[XLM] OK tx=9004eff1348bfea8896c9998a94db110484d7f077a0616360b67f3a3c662ab6b
+=== settlement e2e ===
+[DEMO] OK tx=8c25a194555cb790681b7a3c854999cba9cdb85c75294ad0f2b977b8057784ed
+waiting for close…
+[begin_resolution] OK tx=4f043c994a1df9b5cfae85fe7ae96b9ac31a5f336a6e15055b3e6b639c80569b
+[resolve YES] error: transaction simulation failed: HostError: Error(Contract, #6) tx=dec0000000000000000000000000000000000000000000000000000000000019
+[verify] settled demo market:
+{"close_ts":1782760878,"id":"dec0000000000000000000000000000000000000000000000000000000000019","outcome":2,"question":"Live settlement demo — resolves YES","status":0}
+=== total markets on-chain: ===
+9

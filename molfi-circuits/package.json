@@ -1,0 +1,10 @@
+{
+  "name": "molfi-circuits",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Circom circuits + BLS12-381 Groth16 tooling for Molfi ZK",
+  "dependencies": {
+    "circomlib": "^2.0.5",
+    "snarkjs": "^0.7.6"
+  }
+}

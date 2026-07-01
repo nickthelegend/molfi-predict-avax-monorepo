@@ -1,0 +1,32 @@
+# dependencies & build output
+node_modules/
+dist/
+.next/
+out/
+target/
+.turbo/
+.vercel/
+coverage/
+.cache/
+
+# secrets — NEVER commit (copy the .example/.template and fill your own)
+.env
+.env.local
+.env.production
+.env.*.local
+
+# zk trusted-setup: large / regenerable
+*.ptau
+molfi-circuits/bin/
+*.wtns
+
+# os / logs
+.DS_Store
+*.log
+npm-debug.log*
+
+# foundry + circuit build artifacts (regenerable)
+molfi-contracts/cache/
+molfi-contracts/broadcast/
+molfi-circuits/build/
+videos/

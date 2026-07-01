@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/molfi.svg" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="apple-touch-icon" href="/molfi.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Molfi — Prediction markets on Stellar</title>
+    <script>
+      // Node `global` shim — some browser-bundled deps (e.g. randombytes via
+      // @stellar/stellar-sdk) reference `global` at module load. Runs before
+      // the module bundle, so the reference resolves instead of throwing.
+      window.global ||= window;
+    </script>
+    <script src="/boot.js"></script>
+  </head>
+  <body class="min-h-dvh bg-background font-sans text-foreground antialiased">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,29 @@
+=== Molfi BTC market bet (2026-06-28T20:30:15Z) ===
+Alice=GAOJC5DZKPOAXQLL5NPSTSOTQS2K4KRTGMT34PBWC3MY6BMRQAEU36WK (YES)   Bob=GDTHN3FVDYHQS47SIJFHTPBKMXZ2NSTU3E4QBI2H4WI7726USPIS5HNA (NO)
+[deposit alice 6 XLM] tx=0ee64798bc2fdaa2831dbf0a01ff93c7f83620053ee8081cc56305c84b371928
+[deposit bob 4 XLM]   tx=4582c3628b3b5420a022be3f7cf4def99dabb397293d154b6e3d8a04ab95b440
+[market.create BTC]   tx=
+[clob.settle]         tx=
+  alice YES position: "0"
+  bob   NO  position: "0"
+  escrowed pot:       "0"
+[market.begin_resolution] tx=
+[market.resolve YES]  tx=
+  winning outcome:     (0 = YES)
+[alice.redeem WIN]    tx=  payout=
+[bob.redeem LOSE]     rejected (holds NO, not the winning YES) ✓
+  escrow after:        "0"
+=== done: Alice won the pot, Bob lost his stake ===
+=== Molfi BTC bet — full on-chain run (2026-06-28T20:33:51Z) ===
+Alice=GAOJC5DZKPOAXQLL5NPSTSOTQS2K4KRTGMT34PBWC3MY6BMRQAEU36WK (YES)   Bob=GDTHN3FVDYHQS47SIJFHTPBKMXZ2NSTU3E4QBI2H4WI7726USPIS5HNA (NO)
+[clob.settle] tx=f995b4d257711c5ff9fca4386f68679c888c068931aff0b9a02c721a2cbb35e9
+  alice YES position: "100"
+  bob   NO  position: "100"
+  escrowed pot:       "100000000"
+[market.begin_resolution] tx=70aeede3a095c1977f709996602bfb5f9404ed8ec544bceb67a6ec6bfc25e6e2
+[market.resolve YES] tx=d1fb6d46cf4c8a221c2731342f5158fe9c614fef4a6a216d9b37155f922d17fa
+  winning outcome: 0 (0=YES)
+[alice.redeem WIN] tx=00592f6ebefc4dccc0d898d9e7228f21790b9f10fdc8fd63b5cee2669a45adb6
+[bob.redeem LOSE] rejected — holds NO, not the winning YES ✓
+  escrow after alice redeem: "100000000"
+=== Alice won the 10 XLM pot (staked 6, +4 profit); Bob lost his 4 XLM stake ===

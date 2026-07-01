@@ -1,0 +1,40 @@
+{
+  "name": "@molfi/predict-sdk",
+  "version": "0.0.1",
+  "description": "Agent-native SDK for Molfi — confidential prediction markets on Avalanche (eERC stakes + ZK hidden side + Chainlink).",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "typecheck": "tsc --noEmit",
+    "agent:demo": "node demo/agent-confidential-bet.mjs"
+  },
+  "keywords": [
+    "stellar",
+    "soroban",
+    "clob",
+    "prediction-market",
+    "molfi"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "viem": "^2.21.0",
+    "snarkjs": "^0.7.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.16.5",
+    "typescript": "^5.8.3"
+  }
+}
