@@ -1,38 +1,43 @@
 /**
- * Wallet generation + funding. An agent calls `generateWallet()` to mint a
- * fresh Stellar keypair, then `fundWithFriendbot()` to get testnet XLM for fees.
+ * Wallet generation + funding on Avalanche Fuji. An agent calls
+ * `generateWallet()` to mint a fresh EVM (secp256k1) keypair. Fuji has no
+ * friendbot — the operator/faucet funds gas + mUSDC (see the demo) — so
+ * `fundWithFriendbot` is retained only as a no-op stub for import compatibility.
  */
-import { Keypair } from "@stellar/stellar-sdk";
+import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
+import type { Hex } from "viem";
 import { TESTNET, type MolfiConfig } from "./config.js";
 
 export interface MolfiWallet {
+  /** 0x… EVM address. */
   publicKey: string;
-  /** S... secret seed. Keep private; this is the signing key. */
-  secret: string;
+  address: string;
+  /** 0x… private key. Keep private; this is the signing key. */
+  secret: Hex;
+  privateKey: Hex;
 }
 
-/** Create a brand-new Stellar keypair (an ed25519 key). */
+/** Create a brand-new EVM keypair (a secp256k1 key). */
 export function generateWallet(): MolfiWallet {
-  const kp = Keypair.random();
-  return { publicKey: kp.publicKey(), secret: kp.secret() };
+  const secret = generatePrivateKey();
+  const account = privateKeyToAccount(secret);
+  return { publicKey: account.address, address: account.address, secret, privateKey: secret };
 }
 
-/** Restore a wallet object from a secret seed. */
+/** Restore a wallet object from a 0x… private key. */
 export function walletFromSecret(secret: string): MolfiWallet {
-  const kp = Keypair.fromSecret(secret);
-  return { publicKey: kp.publicKey(), secret };
+  const key = (secret.startsWith("0x") ? secret : `0x${secret}`) as Hex;
+  const account = privateKeyToAccount(key);
+  return { publicKey: account.address, address: account.address, secret: key, privateKey: key };
 }
 
-/** Fund a testnet account with XLM via Friendbot. Idempotent-ish (errors if
- * already funded are swallowed). Returns true if the account is funded. */
+/**
+ * No-op on Fuji (there is no friendbot; gas comes from an operator faucet).
+ * Kept so existing agent onboarding code compiles. Always resolves false.
+ */
 export async function fundWithFriendbot(
-  publicKey: string,
-  config: MolfiConfig = TESTNET,
+  _publicKey: string,
+  _config: MolfiConfig = TESTNET,
 ): Promise<boolean> {
-  const res = await fetch(`${config.friendbotUrl}/?addr=${encodeURIComponent(publicKey)}`);
-  if (res.ok) return true;
-  // 400 usually means "account already funded" — treat as success.
-  const body = await res.text().catch(() => "");
-  if (res.status === 400 && /already funded|op_already_exists|exists/i.test(body)) return true;
   return false;
 }

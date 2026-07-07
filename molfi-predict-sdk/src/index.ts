@@ -1,13 +1,13 @@
 /**
- * molfi-predict-sdk — the modular SDK for Molfi on Stellar.
+ * molfi-predict-sdk — the modular SDK for Molfi on Avalanche Fuji.
  *
  * Two layers, one package:
  *  • Agent layer (`MolfiAgent`, `MolfiChain`, wallet, data) — generate a
  *    wallet, self-faucet, read live markets/odds, and place REAL on-chain
  *    (mUSDC-escrowed, optionally ZK-gated) bets. This is what lets an AI agent
  *    trade autonomously. See SKILL.md.
- *  • CLOB layer (`signClobOrder`, `buildOrder`, `MolfiClient`) — contract-
- *    aligned order signing for the off-chain limit order book.
+ *  • CLOB layer (`signClobOrder`, `buildOrder`, `MolfiClient`) — canonical
+ *    order signing for the off-chain limit order book.
  */
 
 // ── Agent / on-chain layer ───────────────────────────────────────────────────
@@ -48,7 +48,7 @@ export type {
 export {
   canonicalOrderBytes,
   signClobOrder,
-  StellarKeypairSigner,
+  PrivateKeyOrderSigner,
 } from "./clob.js";
 export type { ClobOrder, SignedClobOrder, OrderSigner } from "./clob.js";
 

@@ -2,19 +2,23 @@
   "name": "molfi-backend",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node --test --test-concurrency=1 --test-force-exit \"test/**/*.test.mjs\""
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "module",
   "dependencies": {
-    "@stellar/stellar-sdk": "^16.0.1",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "mongodb": "^7.4.0",
-    "snarkjs": "^0.7.6"
+    "snarkjs": "^0.7.6",
+    "viem": "^2.21.0"
+  },
+  "devDependencies": {
+    "mongodb-memory-server": "^10.1.2"
   }
 }

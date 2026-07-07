@@ -19,6 +19,7 @@
     "build": "tsc -p tsconfig.json",
     "dev": "tsc -p tsconfig.json --watch",
     "typecheck": "tsc --noEmit",
+    "test": "npm run build && node --test \"test/**/*.test.mjs\"",
     "agent:demo": "node demo/agent-confidential-bet.mjs"
   },
   "keywords": [

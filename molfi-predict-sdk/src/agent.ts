@@ -1,15 +1,15 @@
 /**
- * MolfiAgent — the one-class API for an autonomous trader.
+ * MolfiAgent — the one-class API for an autonomous trader on Avalanche Fuji.
  *
- *   const agent = MolfiAgent.create();     // fresh wallet
- *   await agent.onboard();                 // friendbot XLM + mUSDC faucet
- *   const markets = await agent.markets(); // live order book / odds
- *   await agent.bet(onChainMarketId, 0, 100);   // escrow 100 mUSDC on YES
- *   await agent.redeem(onChainMarketId);        // claim winnings after resolution
+ *   const agent = MolfiAgent.create();          // fresh EVM wallet
+ *   await agent.onboard();                       // mint mUSDC from the faucet
+ *   const markets = await agent.markets();       // live order book / odds
+ *   await agent.bet(onChainMarketId, 0, 100);    // escrow 100 mUSDC on YES
+ *   await agent.redeem(onChainMarketId);         // claim winnings after resolution
  *
  * Data (markets, odds, leaderboard, vaults) comes from the Molfi market engine;
- * money movement (faucet, bet, redeem) is real on-chain Soroban, signed by the
- * agent's own key.
+ * money movement (faucet, bet, redeem) is real on-chain, signed by the agent's
+ * own secp256k1 key via viem.
  */
 import { TESTNET, fromBaseUnits, type MolfiConfig } from "./config.js";
 import {
@@ -31,6 +31,7 @@ import {
 
 export interface OnboardResult {
   address: string;
+  /** Always false on Fuji (no friendbot); retained for shape compatibility. */
   xlmFunded: boolean;
   musdc: number;
 }
@@ -43,7 +44,7 @@ export class MolfiAgent {
   constructor(secret: string, config: MolfiConfig = TESTNET) {
     this.config = config;
     this.wallet = walletFromSecret(secret);
-    this.chain = new MolfiChain({ config, secret });
+    this.chain = new MolfiChain({ config, privateKey: this.wallet.privateKey });
   }
 
   /** Spin up an agent with a brand-new wallet. Save `agent.wallet.secret`. */
@@ -52,10 +53,10 @@ export class MolfiAgent {
   }
 
   get address(): string {
-    return this.wallet.publicKey;
+    return this.wallet.address;
   }
 
-  /** Fund the wallet with testnet XLM (friendbot) and claim test mUSDC. */
+  /** Claim test mUSDC from the open faucet. (Gas AVAX must be funded separately.) */
   async onboard(): Promise<OnboardResult> {
     const xlmFunded = await fundWithFriendbot(this.address, this.config);
     await this.chain.faucet();
@@ -89,22 +90,21 @@ export class MolfiAgent {
   // ── Trading (real on-chain mUSDC) ─────────────────────────────────────────
   /** mUSDC balance as a human number. */
   async musdc(): Promise<number> {
-    return fromBaseUnits(await this.chain.musdcBalance(), this.config.musdcDecimals);
+    return fromBaseUnits(await this.chain.musdcBalance(), this.config.decimals);
   }
   /** Escrow `amount` mUSDC on an outcome (0=YES, 1=NO) of an on-chain market. */
   bet(marketId: string, outcome: number, amount: number) {
     return this.chain.bet(marketId, outcome, amount);
   }
-  /** Privacy bet gated by a Groth16 proof verified on-chain. */
+  /** Privacy bet gated by a Groth16 proof verified on-chain (BN254). */
   betZk(
     marketId: string,
     outcome: number,
     amount: number,
     proof: Groth16Proof,
-    publicInputs: string[],
-    domain: string,
+    publicInputs: (string | bigint)[],
   ) {
-    return this.chain.betZk(marketId, outcome, amount, proof, publicInputs, domain);
+    return this.chain.betZk(marketId, outcome, amount, proof, publicInputs);
   }
   /** Claim winnings after the market resolves. */
   redeem(marketId: string) {

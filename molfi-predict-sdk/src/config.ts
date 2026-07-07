@@ -28,8 +28,13 @@ export interface MolfiConfig {
 const env = (k: string, d: string) =>
   (typeof process !== "undefined" && process.env?.[k]) || d;
 
-export const config: MolfiConfig = {
-  backendUrl: env("MOLFI_BACKEND_URL", "http://localhost:8080"),
+/**
+ * Default Molfi network config — Avalanche Fuji C-Chain.
+ * (Named `TESTNET` for import compatibility with the agent/chain/wallet/data
+ * modules; the underlying chain is Fuji, not Stellar testnet.)
+ */
+export const TESTNET: MolfiConfig = {
+  backendUrl: env("MOLFI_BACKEND_URL", "http://localhost:4000"),
   rpcUrl: env("MOLFI_RPC", "https://api.avax-test.network/ext/bc/C/rpc"),
   chainId: Number(env("MOLFI_CHAIN_ID", "43113")),
   explorer: "https://testnet.snowtrace.io",
@@ -49,3 +54,41 @@ export const config: MolfiConfig = {
     "LINK/USD": "0x34C4c526902d88a3Aa98DB8a9b802603EB1E3470",
   },
 };
+
+/** Back-compat alias — some callers imported the config as `config`. */
+export const config: MolfiConfig = TESTNET;
+
+/** Outcome encoding shared by the market + escrow contracts. */
+export const OUTCOME_YES = 0;
+export const OUTCOME_NO = 1;
+export const OUTCOME_INVALID = 2;
+
+/**
+ * Convert a human token amount to base units (integer). mUSDC/cUSD have 7
+ * decimals, so `toBaseUnits(1.5)` → `15000000n`. Truncates sub-unit dust.
+ */
+export function toBaseUnits(amount: number | string, decimals = TESTNET.decimals): bigint {
+  const s = String(amount).trim();
+  if (!/^-?\d*(\.\d*)?$/.test(s) || s === "" || s === "." || s === "-") {
+    throw new Error(`invalid amount: ${amount}`);
+  }
+  const neg = s.startsWith("-");
+  const [whole, frac = ""] = (neg ? s.slice(1) : s).split(".");
+  const fracPadded = (frac + "0".repeat(decimals)).slice(0, decimals);
+  const digits = `${whole || "0"}${fracPadded}`.replace(/^0+(?=\d)/, "");
+  const value = BigInt(digits || "0");
+  return neg ? -value : value;
+}
+
+/** Convert base units back to a human number. Inverse of {@link toBaseUnits}. */
+export function fromBaseUnits(base: bigint | number | string, decimals = TESTNET.decimals): number {
+  const b = BigInt(base);
+  const divisor = 10n ** BigInt(decimals);
+  const neg = b < 0n;
+  const abs = neg ? -b : b;
+  const whole = abs / divisor;
+  const frac = abs % divisor;
+  const fracStr = frac.toString().padStart(decimals, "0");
+  const num = Number(`${whole}.${fracStr}`);
+  return neg ? -num : num;
+}

@@ -1,17 +1,18 @@
 /**
  * Contract-aligned CLOB order signing.
  *
- * Produces the EXACT byte layout the `clob-settlement` Soroban contract verifies
- * with ed25519 (`canonical_order_bytes`):
+ * Produces a canonical byte layout for a Molfi limit order:
  *
  *   market(32) ‖ maker_pubkey(32) ‖ outcome(u32 BE) ‖ price(u32 BE)
  *            ‖ size(i128 BE, 16) ‖ nonce(u64 BE) ‖ expiry(u64 BE)   = 104 bytes
  *
- * A Stellar account key IS an ed25519 key, so `StellarKeypairSigner` signs these
- * bytes directly and the contract's `ed25519_verify(maker_pubkey, msg, sig)`
- * accepts them — no separate signing scheme needed.
+ * On Avalanche the maker is an EVM account, so `PrivateKeyOrderSigner` signs the
+ * keccak256 of these bytes with the account's secp256k1 key (EVM-recoverable).
+ * `canonicalOrderBytes` stays pure and chain-agnostic.
  */
-import { Keypair } from "@stellar/stellar-sdk";
+import { keccak256, hexToBytes } from "viem";
+import { privateKeyToAccount, type PrivateKeyAccount } from "viem/accounts";
+import type { Hex } from "viem";
 
 const PRICE_ONE = 1_000_000; // micro-units; price is a probability in [0,1]
 
@@ -30,30 +31,43 @@ export interface ClobOrder {
 
 export interface SignedClobOrder {
   order: ClobOrder;
-  /** 32-byte ed25519 public key of the maker. */
+  /** 32-byte maker identity (the low 32 bytes of the EVM address, zero-padded). */
   makerPubkey: Uint8Array;
-  /** 64-byte ed25519 signature over the canonical bytes. */
+  /** ECDSA signature bytes over keccak256(canonical bytes). */
   signature: Uint8Array;
 }
 
-/** Signs raw bytes with an ed25519 key and reports its public key. */
+/** Signs raw bytes and reports the 32-byte maker identity. */
 export interface OrderSigner {
   publicKey(): Uint8Array | Promise<Uint8Array>;
   sign(message: Uint8Array): Uint8Array | Promise<Uint8Array>;
 }
 
-/** ed25519 signer backed by a Stellar `Keypair`. */
-export class StellarKeypairSigner implements OrderSigner {
-  constructor(private readonly keypair: Keypair) {}
-  publicKey(): Uint8Array {
-    return new Uint8Array(this.keypair.rawPublicKey());
+/** Pad a 20-byte EVM address into the 32-byte maker slot (left-zero-padded). */
+function addressToMakerBytes(address: Hex): Uint8Array {
+  const raw = hexToBytes(address); // 20 bytes
+  const out = new Uint8Array(32);
+  out.set(raw, 12);
+  return out;
+}
+
+/** ECDSA signer backed by a viem local (private-key) account. */
+export class PrivateKeyOrderSigner implements OrderSigner {
+  private readonly account: PrivateKeyAccount;
+  constructor(privateKey: Hex) {
+    this.account = privateKeyToAccount(privateKey.startsWith("0x") ? privateKey : (`0x${privateKey}` as Hex));
   }
-  sign(message: Uint8Array): Uint8Array {
-    return new Uint8Array(this.keypair.sign(Buffer.from(message)));
+  publicKey(): Uint8Array {
+    return addressToMakerBytes(this.account.address);
+  }
+  async sign(message: Uint8Array): Promise<Uint8Array> {
+    const digest = keccak256(message);
+    const sig = await this.account.sign({ hash: digest });
+    return hexToBytes(sig);
   }
 }
 
-/** Canonical order bytes — must byte-match `clob-settlement::canonical_order_bytes`. */
+/** Canonical order bytes — 104-byte big-endian packed layout. */
 export function canonicalOrderBytes(order: ClobOrder, makerPubkey: Uint8Array): Uint8Array {
   if (order.market.length !== 32) throw new Error("market must be 32 bytes");
   if (makerPubkey.length !== 32) throw new Error("makerPubkey must be 32 bytes");
@@ -79,7 +93,7 @@ export function canonicalOrderBytes(order: ClobOrder, makerPubkey: Uint8Array): 
   return buf;
 }
 
-/** Build canonical bytes and ed25519-sign them with `signer`. */
+/** Build canonical bytes and sign them with `signer`. */
 export async function signClobOrder(
   order: ClobOrder,
   signer: OrderSigner,
