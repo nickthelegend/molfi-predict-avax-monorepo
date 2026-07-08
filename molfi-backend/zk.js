@@ -67,12 +67,19 @@ export function prepareCommit(side) {
  * Solidity-calldata shape plus the public signals `[root, nullifierHash,
  * outcome, recipient]`.
  */
-export async function proveNote(note) {
+export async function proveNote(note, recipient) {
+  // The recipient public signal MUST equal uint256(uint160(claimer)) — that's what
+  // ConfidentialBet.claim injects and the verifier checks. Bind it to the claiming
+  // address (0x…); fall back to the note's field only if none is supplied.
+  const recipientField =
+    recipient != null && String(recipient).startsWith("0x")
+      ? BigInt(recipient).toString()
+      : String(note.recipient);
   const input = {
     secret: String(note.secret),
     nullifier: String(note.nullifier),
     outcome: String(note.outcome),
-    recipient: String(note.recipient),
+    recipient: recipientField,
     pathElements: ["1", "2", "3", "4", "5", "6", "7", "8"],
     pathIndices: ["0", "1", "0", "1", "0", "0", "1", "0"],
   };

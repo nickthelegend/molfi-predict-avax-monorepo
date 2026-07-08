@@ -276,15 +276,19 @@ export async function fetchConfidentialNote(side: "YES" | "NO"): Promise<ConfPre
   return r.json();
 }
 
-/** Build the on-chain ZK claim proof for a confidential note on a resolved market. */
+/** Build the on-chain ZK claim proof for a confidential note on a resolved market.
+ * `recipient` (the claiming wallet) is bound into the proof — the ConfidentialBet
+ * contract injects `uint160(recipient)` as a public input, so the proof must be
+ * generated for the exact address that will call `claim`, else it reverts. */
 export async function fetchConfidentialClaim(
   note: ConfNote,
   marketId: string,
+  recipient: string,
 ): Promise<ConfPrepareClaim> {
   const r = await fetch(`${BASE}/api/confidential/prepare-claim`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ note, marketId }),
+    body: JSON.stringify({ note, marketId, recipient }),
   });
   if (!r.ok) throw new Error("Confidential proof service unavailable");
   return r.json();

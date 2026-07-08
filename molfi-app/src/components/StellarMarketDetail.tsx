@@ -778,6 +778,7 @@ function OnChainDetail({ id }: { id: string }) {
           recipient: note.recipient,
         },
         id,
+        address,
       );
       if (!prep.resolved) return showError("Market isn't resolved yet — claim once it settles.");
       if (!prep.won || !prep.proof) {

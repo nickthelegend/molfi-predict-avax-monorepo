@@ -399,7 +399,7 @@ export function createApp({ db, chain, zk, lastPrice = {} }) {
 
   app.post("/api/confidential/prepare-claim", async (req, res) => {
     try {
-      const { note, marketId } = req.body || {};
+      const { note, marketId, recipient } = req.body || {};
       if (!note || !marketId) return res.status(400).json({ error: "note + marketId required" });
       let resolved = false;
       try {
@@ -417,7 +417,10 @@ export function createApp({ db, chain, zk, lastPrice = {} }) {
       if (!zk.circuitAvailable()) {
         return res.status(503).json({ error: "ZK circuit artifacts not available" });
       }
-      const p = await zk.proveNote(note);
+      // Bind the proof's recipient to the claiming EVM address — the contract
+      // injects uint256(uint160(recipient)) as a public input and the verifier
+      // checks it, so without this the on-chain claim reverts with BadProof.
+      const p = await zk.proveNote(note, recipient);
       res.json({
         resolved: true,
         won: true,
