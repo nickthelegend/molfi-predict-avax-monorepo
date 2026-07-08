@@ -88,9 +88,8 @@ see [`TESTING.md`](./TESTING.md).
 molfi-circuits/         Circom circuits (recompiled to BN254) + Solidity verifier export
 molfi-contracts/        Foundry: MolfiMarket · ConfidentialBet · verifier (Soroban kept in soroban-legacy/)
 molfi-predict-sdk/      viem SDK + agent + SKILL.md (demo/agent-confidential-bet.mjs)
-molfi-app/              React/Vite trading UI (premium components preserved; chain layer → Fuji)
+molfi-app/              React/Vite trading UI (premium components preserved; chain layer → Fuji; RainbowKit connect)
 molfi-backend/          market engine + Chainlink price polling (Express + MongoDB)
-molfi-predict-app/      earlier prediction-market front end (pre-migration)
 molfi-predict-landing/  marketing site (Next.js)
 ```
 

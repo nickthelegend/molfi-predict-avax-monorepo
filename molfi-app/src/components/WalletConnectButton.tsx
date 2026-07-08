@@ -165,7 +165,7 @@ export function WalletConnectButton({
           className={cn("min-w-[12rem]", fullWidth && "w-[var(--radix-dropdown-menu-trigger-width)]")}
         >
           <DropdownMenuLabel className="text-sm font-normal text-muted-foreground">
-            {connectedIsGoogle ? "Signed in with Google" : "Connected · Stellar"}
+            {connectedIsGoogle ? "Signed in with Google" : "Connected · Avalanche"}
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem

@@ -4,10 +4,11 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useState,
   type ReactNode,
 } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useAccount, useDisconnect, useWalletClient } from "wagmi";
+import { useConnectModal } from "@rainbow-me/rainbowkit";
 import {
   clearWalletScopedQueries,
   invalidateWalletScopedQueries,
@@ -16,22 +17,19 @@ import type { WalletWithRequiredFeatures } from "@mysten/wallet-standard";
 import type { WalletAccount } from "@wallet-standard/core";
 import type { SuiJsonRpcClient } from "@mysten/sui/jsonRpc";
 import { suiClient } from "@/lib/sui/client";
-import { showError } from "@/lib/toast";
-import { walletKit, NETWORK_PASSPHRASE } from "@/lib/stellar/walletKit";
-
-const STORAGE_KEY = "molfi:stellar-address";
+import { setWalletClient } from "@/lib/stellar/soroban";
 
 /**
- * Stellar wallet/identity layer (migrated from Sui wallet-standard).
+ * Wallet / identity layer — **Avalanche Fuji**, powered by wagmi + RainbowKit.
  *
- * `connect()` opens the Stellar Wallets Kit modal and exposes the connected
- * `G…` address. The context keeps the original interface shape so the UI keeps
- * compiling during the migration. NOTE: read/execution paths that still call
- * the Sui protocol (`client`, `simulationSender`) remain Sui until the on-chain
- * layer is ported to Soroban — those are the next migration phase.
+ * `connect()` opens the RainbowKit modal (Core / MetaMask / WalletConnect / …).
+ * The connected account's viem wallet client is wired into the on-chain layer
+ * (`setWalletClient`) so writes sign through the user's wallet. The context keeps
+ * its original interface shape so the premium UI compiles unchanged; the legacy
+ * Sui fields (`client`, `simulationSender`) are retained only for compatibility.
  */
 
-/** Sui read-only sender retained for legacy dev-inspect reads during transition. */
+/** Retained read-only sender for legacy dev-inspect reads during transition. */
 export const READONLY_SENDER =
   "0x0000000000000000000000000000000000000000000000000000000000000001";
 
@@ -47,7 +45,7 @@ interface WalletContextValue {
   connect: (wallet?: WalletWithRequiredFeatures) => Promise<void>;
   disconnect: () => Promise<void>;
   refreshWallets: () => void;
-  /** Sign a Soroban/Stellar transaction XDR with the connected wallet. */
+  /** Legacy no-op on EVM (writes go through the connected wallet client). */
   signTransaction: (xdr: string) => Promise<string>;
 }
 
@@ -55,50 +53,30 @@ const WalletContext = createContext<WalletContextValue | null>(null);
 
 export function WalletProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
-  const [address, setAddress] = useState<string | null>(() =>
-    typeof window === "undefined" ? null : localStorage.getItem(STORAGE_KEY),
-  );
-  const [connecting, setConnecting] = useState(false);
+  const { address, isConnected, isConnecting, isReconnecting } = useAccount();
+  const { data: walletClient } = useWalletClient();
+  const { disconnectAsync } = useDisconnect();
+  const { openConnectModal } = useConnectModal();
+
+  // Wire the connected wallet client into the on-chain write path.
+  useEffect(() => {
+    if (walletClient && address) setWalletClient(walletClient, address);
+    else setWalletClient(null);
+  }, [walletClient, address]);
 
   const connect = useCallback(async () => {
-    setConnecting(true);
-    try {
-      await walletKit.openModal({
-        onWalletSelected: async (option) => {
-          walletKit.setWallet(option.id);
-          const { address: addr } = await walletKit.getAddress();
-          setAddress(addr);
-          localStorage.setItem(STORAGE_KEY, addr);
-        },
-      });
-    } catch (e) {
-      showError(e instanceof Error ? e.message : "Could not connect wallet");
-    } finally {
-      setConnecting(false);
-    }
-  }, []);
+    openConnectModal?.();
+  }, [openConnectModal]);
 
   const disconnect = useCallback(async () => {
     try {
-      await walletKit.disconnect();
+      await disconnectAsync();
     } catch {
       /* already disconnected */
     }
-    setAddress(null);
-    localStorage.removeItem(STORAGE_KEY);
-  }, []);
+  }, [disconnectAsync]);
 
-  const signTransaction = useCallback(
-    async (xdr: string) => {
-      if (!address) throw new Error("Wallet not connected");
-      const { signedTxXdr } = await walletKit.signTransaction(xdr, {
-        address,
-        networkPassphrase: NETWORK_PASSPHRASE,
-      });
-      return signedTxXdr;
-    },
-    [address],
-  );
+  const signTransaction = useCallback(async (xdr: string) => xdr, []);
 
   // Wallet-scoped query cache: clear/refresh on address change.
   useEffect(() => {
@@ -112,16 +90,16 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       wallets: [],
       wallet: null,
       account: address ? ({ address } as unknown as WalletAccount) : null,
-      address,
-      isWalletConnected: Boolean(address),
+      address: address ?? null,
+      isWalletConnected: isConnected,
       simulationSender: READONLY_SENDER,
-      connecting,
+      connecting: isConnecting || isReconnecting,
       connect,
       disconnect,
       refreshWallets: () => {},
       signTransaction,
     }),
-    [address, connecting, connect, disconnect, signTransaction],
+    [address, isConnected, isConnecting, isReconnecting, connect, disconnect, signTransaction],
   );
 
   return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>;
