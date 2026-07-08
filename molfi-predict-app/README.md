@@ -1,5 +1,10 @@
 # molfi-predict-app
 
+> ⚠️ **Legacy (pre-migration).** This is the original **Stellar** front-end, kept
+> for reference. The active Avalanche app — migrated to viem/Fuji with the premium
+> UI preserved — is [`molfi-app`](../molfi-app). Use that one. This package still
+> targets Soroban and is not part of the Avalanche deployment.
+
 The Molfi trading dApp — a React + Vite front-end for **private prediction
 markets on Stellar**. See the [project README](../README.md) for the full
 architecture, live testnet deployment, and on-chain demo.
