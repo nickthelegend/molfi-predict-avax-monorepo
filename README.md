@@ -62,9 +62,13 @@ the agent **claims its winnings** — all on Fuji, side never revealed.
 - Market resolved from **Chainlink**: [`0x6ab6d118…`](https://testnet.snowtrace.io/tx/0x6ab6d11897e2b16b52fd50300fa39360a3dc3302cc6a6e136ed4bab7fc162e64)
 - Hidden bet committed: [`0x0c81ed4b…`](https://testnet.snowtrace.io/tx/0x0c81ed4bac2badb1ba3c912c3d243a759b2ea5f12528cbc2a9e1cdbc9aaf69a8)
 
-**Contract tests:** `cd molfi-contracts && forge test` → **4 passing** (Chainlink
-resolve → confidential claim, replay rejected, loser-can't-claim, stale-feed
-rejected), using a real BN254 proof.
+**Tests, all green:** `molfi-contracts` **33/33** (`forge test`) ·
+`molfi-app` **55 passing + 4 skipped** (`npm test`; the 4 are the live e2e,
+opt-in with a funded Fuji key) · `molfi-backend` **18/18** (`npm test`) ·
+`molfi-predict-sdk` **11/11** (`npm test`). Confidential-bet claims (contracts
+and backend) are checked against a **real BN254 Groth16 proof**, not a stub.
+Full reproducible matrix, exact commands, and the live-vs-mocked breakdown:
+see [`TESTING.md`](./TESTING.md).
 
 ## Deployed (Fuji 43113)
 
@@ -81,13 +85,16 @@ rejected), using a real BN254 proof.
 ## Repo layout
 
 ```
-molfi-circuits/     Circom circuits (recompiled to BN254) + Solidity verifier export
-molfi-contracts/    Foundry: MolfiMarket · ConfidentialBet · verifier (Soroban kept in soroban-legacy/)
-molfi-predict-sdk/  viem SDK + agent + SKILL.md (demo/agent-confidential-bet.mjs)
-molfi-app/          React/Vite trading UI (premium components preserved; chain layer → Fuji)
-molfi-backend/      market engine + Chainlink price polling
-molfi-predict-landing/  marketing site
+molfi-circuits/         Circom circuits (recompiled to BN254) + Solidity verifier export
+molfi-contracts/        Foundry: MolfiMarket · ConfidentialBet · verifier (Soroban kept in soroban-legacy/)
+molfi-predict-sdk/      viem SDK + agent + SKILL.md (demo/agent-confidential-bet.mjs)
+molfi-app/              React/Vite trading UI (premium components preserved; chain layer → Fuji)
+molfi-backend/          market engine + Chainlink price polling (Express + MongoDB)
+molfi-predict-app/      earlier prediction-market front end (pre-migration)
+molfi-predict-landing/  marketing site (Next.js)
 ```
+
+See [`TESTING.md`](./TESTING.md) for what's tested where.
 
 Testnet only · not audited. Circuit artifacts are rebuilt with
 `cd molfi-circuits && bash scripts/build-bn254.sh confidential_bet 14`.
