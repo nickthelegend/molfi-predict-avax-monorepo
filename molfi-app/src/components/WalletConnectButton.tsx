@@ -214,7 +214,7 @@ export function WalletConnectButton({
   );
 
   const unavailableHint =
-    "No Stellar wallet found. Install Freighter (or Lobstr / Hana / Albedo) to continue.";
+    "No Avalanche wallet found. Install MetaMask (or Core / Rainbow / Coinbase Wallet) to continue.";
 
   const walletMenuItems = walletOptions.map((opt) => (
     <DropdownMenuItem key={opt.id} className="gap-2" onClick={() => void opt.onSelect()}>

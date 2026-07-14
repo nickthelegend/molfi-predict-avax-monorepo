@@ -13,8 +13,8 @@ export function MarketsHeroSidebar({ className }: Props) {
       <MarketsHeroPromoCard
         badge="Live"
         imageSrc={overflowBg}
-        title="Private predictions on Stellar"
-        description="Trade YES/NO outcomes on real-world events, settled on-chain by Soroban contracts."
+        title="Private predictions on Avalanche"
+        description="Trade YES/NO outcomes on real-world events, settled on-chain by Solidity contracts."
         ctaLabel="Explore markets"
         to="/markets"
       />

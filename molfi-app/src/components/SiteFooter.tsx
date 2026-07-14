@@ -36,7 +36,7 @@ export function SiteFooter() {
       <div className="site-footer-inner">
         <div className="site-footer-statuses" aria-label="Service status">
           <ServiceStatus label="Markets engine" online={engine?.ok === true} />
-          <ServiceStatus label="Stellar testnet" online />
+          <ServiceStatus label="Avalanche Fuji" online />
         </div>
         <nav className="site-footer-links" aria-label="Legal">
           <Link to="/terms">Terms</Link>

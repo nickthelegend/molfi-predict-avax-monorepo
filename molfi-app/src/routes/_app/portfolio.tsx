@@ -44,7 +44,7 @@ function PortfolioPage() {
       {!isWalletConnected || !address ? (
         <WalletConnectPrompt
           title="Sign in for your portfolio"
-          description="Connect your Stellar wallet to see your trades and indicative profit and loss."
+          description="Connect your Avalanche wallet to see your trades and indicative profit and loss."
         />
       ) : (
         <MolfiPortfolio address={address} />

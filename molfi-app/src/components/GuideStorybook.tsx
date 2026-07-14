@@ -88,7 +88,7 @@ export function GuideStorybook() {
           </div>
           <div className="guide-hero-stat">
             <span className="guide-hero-stat-value">On-chain</span>
-            <span className="guide-hero-stat-label">Settled &amp; verifiable on Stellar</span>
+            <span className="guide-hero-stat-label">Settled &amp; verifiable on Avalanche</span>
           </div>
         </div>
       </header>
@@ -263,12 +263,12 @@ export function GuideStorybook() {
                 </div>
                 <div>
                   <dt>Fully on-chain</dt>
-                  <dd>Every market, bet, and settlement is recorded on Stellar.</dd>
+                  <dd>Every market, bet, and settlement is recorded on Avalanche.</dd>
                 </div>
               </dl>
             </GuidePanel>
             <GuideCallout variant="tip" title="Verify anything">
-              Each market and settlement lives on Stellar — open it on stellar.expert to check the
+              Each market and settlement lives on Avalanche — open it on snowtrace.io to check the
               outcome and payouts for yourself.
             </GuideCallout>
           </GuideChapter>
@@ -286,7 +286,7 @@ export function GuideStorybook() {
                 </span>
                 <span className="guide-step-body">
                   <strong>Connect a wallet</strong>
-                  <span>Click Sign in and pick a Stellar wallet — Freighter, xBull, Albedo, Lobstr, or Hana.</span>
+                  <span>Click Sign in and pick an Avalanche wallet — MetaMask, Core, Rainbow, Coinbase Wallet, or WalletConnect.</span>
                 </span>
               </li>
               <li>
@@ -341,7 +341,7 @@ export function GuideStorybook() {
             <dl className="guide-faq">
               <div className="guide-faq-item">
                 <dt>Is this real money?</dt>
-                <dd>Molfi runs on Stellar testnet for now — you bet with test funds, no real money at risk.</dd>
+                <dd>Molfi runs on Avalanche Fuji testnet for now — you bet with test funds, no real money at risk.</dd>
               </div>
               <div className="guide-faq-item">
                 <dt>Is there leverage?</dt>
@@ -357,11 +357,11 @@ export function GuideStorybook() {
               </div>
               <div className="guide-faq-item">
                 <dt>How do I connect?</dt>
-                <dd>Click Sign in and choose a Stellar wallet (Freighter, xBull, Albedo, Lobstr, or Hana).</dd>
+                <dd>Click Sign in and choose an Avalanche wallet (MetaMask, Core, Rainbow, Coinbase Wallet, or WalletConnect).</dd>
               </div>
               <div className="guide-faq-item">
                 <dt>Where can I verify a market?</dt>
-                <dd>Every market and settlement is on Stellar — open it on stellar.expert to check.</dd>
+                <dd>Every market and settlement is on Avalanche — open it on snowtrace.io to check.</dd>
               </div>
             </dl>
           </GuideChapter>

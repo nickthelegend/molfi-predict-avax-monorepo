@@ -17,11 +17,11 @@ export function PromoBanner({ className }: { className?: string; }) {
         <div className="overflow-season-banner-copy">
           <span className="overflow-season-eyebrow">
             <Trophy className="h-3 w-3 shrink-0" aria-hidden />
-            Private predictions on Stellar
+            Private predictions on Avalanche
           </span>
           <h2 className="overflow-season-title">Bet privately, on-chain</h2>
           <p className="overflow-season-desc">
-            Trade YES/NO on real crypto markets — settled by the Reflector oracle, your side hidden with zero-knowledge.
+            Trade YES/NO on real crypto markets — settled by the Chainlink oracle, your side hidden with zero-knowledge.
           </p>
         </div>
         <Link to="/markets" className="overflow-season-cta">

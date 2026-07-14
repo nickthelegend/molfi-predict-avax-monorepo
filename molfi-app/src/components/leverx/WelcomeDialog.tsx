@@ -50,9 +50,9 @@ const STEPS: readonly WelcomeStep[] = [
     description: ui.appTagline,
     icon: <Sparkles className="h-5 w-5" aria-hidden />,
     bullets: [
-      "Real on-chain markets on Stellar testnet — bet with test mUSDC",
+      "Real on-chain markets on Avalanche Fuji — bet with test mUSDC",
       "Bet YES or NO on where crypto prices finish at expiry",
-      "Settled on-chain by the Reflector oracle · bet privately with ZK",
+      "Settled on-chain by the Chainlink oracle · bet privately with ZK",
     ],
   },
   {
@@ -91,7 +91,7 @@ const STEPS: readonly WelcomeStep[] = [
   {
     title: "Trade or earn",
     description:
-      "Connect a Stellar wallet to open positions, or deposit mUSDC to the LP vault and earn from trading fees.",
+      "Connect an Avalanche wallet to open positions, or deposit mUSDC to the LP vault and earn from trading fees.",
     icon: <Coins className="h-5 w-5" aria-hidden />,
     bullets: [
       "Browse live markets and open your first trade",

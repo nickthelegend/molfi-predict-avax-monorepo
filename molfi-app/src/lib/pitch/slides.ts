@@ -36,7 +36,7 @@ export type PitchSlide = {
 export const PITCH_SLIDES: PitchSlide[] = [
   {
     id: "cover",
-    eyebrow: "Private prediction markets · Stellar",
+    eyebrow: "Private prediction markets · Avalanche",
     title: "Molfi",
     body: "Bet on real-world outcomes — your side stays private, proven with zero-knowledge.",
     pattern: "grid",
@@ -58,7 +58,7 @@ export const PITCH_SLIDES: PitchSlide[] = [
     id: "solution",
     eyebrow: "The pitch",
     title: "Molfi hides your side",
-    body: "A private prediction market on Stellar, settled on-chain.",
+    body: "A private prediction market on Avalanche, settled on-chain.",
     items: [
       "Bet YES or NO — your side hidden behind a commitment note",
       "Claim winnings with an on-chain Groth16 proof",
@@ -73,7 +73,7 @@ export const PITCH_SLIDES: PitchSlide[] = [
     title: "Commit · Resolve · Claim",
     items: [
       "Commit a uniform-denomination note — side + amount hidden",
-      "The market resolves on-chain from the Reflector oracle",
+      "The market resolves on-chain from the Chainlink oracle",
       "Prove you backed the winner in zero-knowledge — nullifier burned",
     ],
     pattern: "cross",
@@ -82,10 +82,10 @@ export const PITCH_SLIDES: PitchSlide[] = [
   {
     id: "onchain",
     eyebrow: "Real, on-chain",
-    title: "Soroban contracts, live on testnet",
+    title: "Solidity contracts, live on Fuji testnet",
     items: [
-      "predict-escrow + confidential-bet deployed and verified",
-      "Every bet checked on-chain — BLS12-381 Groth16 (CAP-0059)",
+      "PredictEscrow + ConfidentialBet deployed and verified",
+      "Every bet checked on-chain — BN254 Groth16",
       "An autonomous keeper rolls and settles markets 24/7",
     ],
     pattern: "rings",
@@ -106,10 +106,10 @@ export const PITCH_SLIDES: PitchSlide[] = [
   {
     id: "why",
     eyebrow: "Why it's real",
-    title: "Built on Stellar's real primitives",
+    title: "Built on Avalanche's real primitives",
     items: [
-      "Reflector SEP-40 — the live Stellar price oracle",
-      "Circom + snarkjs Groth16 over BLS12-381 host functions",
+      "Chainlink Data Feeds — the live Avalanche price oracle",
+      "Circom + snarkjs Groth16 over BN254",
       "mUSDC escrow — real on-chain settlement, not a mock",
     ],
     pattern: "stripes",
@@ -120,7 +120,7 @@ export const PITCH_SLIDES: PitchSlide[] = [
     eyebrow: "Get started",
     title: "Live on testnet today",
     items: [
-      "Connect a Stellar wallet · faucet test mUSDC",
+      "Connect an Avalanche wallet · faucet test mUSDC",
       "Pick a market — bet in the open, or 🔒 privately",
       "Win? Claim on-chain with a ZK proof — your side never shown",
     ],
@@ -145,7 +145,7 @@ export const PITCH_SLIDES: PitchSlide[] = [
     eyebrow: "What's next",
     title: "Roadmap",
     items: [
-      "Shared anonymity set — a BLS12-381 Poseidon accumulator",
+      "Shared anonymity set — a BN254 Poseidon accumulator",
       "Client-side proving for end-to-end trustlessness",
       "Mainnet, more markets, and richer privacy",
     ],

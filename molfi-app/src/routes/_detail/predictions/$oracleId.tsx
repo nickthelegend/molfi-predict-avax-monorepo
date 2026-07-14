@@ -9,7 +9,7 @@ export const Route = createFileRoute("/_detail/predictions/$oracleId")({
   head: () => ({
     meta: [
       { title: pageTitle("Market") },
-      { name: "description", content: "A live on-chain prediction market on Stellar." },
+      { name: "description", content: "A live on-chain prediction market on Avalanche." },
     ],
   }),
   component: OracleTradePage,

@@ -1,8 +1,8 @@
 /** Plain-language copy for the marketing landing page. */
 export const landingCopy = {
-  eyebrow: "Live on Stellar · Testnet",
+  eyebrow: "Live on Avalanche · Fuji Testnet",
   heroTitle: "Predict privately.",
-  heroTitleAccent: "Confidential prediction markets on Stellar.",
+  heroTitleAccent: "Confidential prediction markets on Avalanche.",
   heroLead:
     "Bet on real-world outcomes with on-chain settlement and zero-knowledge privacy. Your position stays yours.",
   ctaTrade: "Start trading",
@@ -28,11 +28,11 @@ export const landingCopy = {
   marketsEyebrow: "Markets",
   marketsTitle: "Pick a direction on live prices",
   marketsLead:
-    "Will BTC finish above your target? Below it? Choose a market, set your view, and place your bet — settled on-chain by Soroban contracts.",
+    "Will BTC finish above your target? Below it? Choose a market, set your view, and place your bet — settled on-chain by Solidity contracts.",
   marketsBullets: [
     "Price-up and price-down markets on major assets",
     "Target prices update as the market moves",
-    "Full list of open markets, live on Stellar testnet",
+    "Full list of open markets, live on Avalanche Fuji",
   ] as const,
   marketsCta: "Browse markets",
 
@@ -49,23 +49,23 @@ export const landingCopy = {
 
   earnersTitle: "Private by design",
   earnersLead:
-    "Molfi runs on Soroban smart contracts with a Groth16 zero-knowledge verifier and a privacy pool — confidential by construction, not by promise.",
+    "Molfi runs on Solidity smart contracts with a Groth16 zero-knowledge verifier and a privacy pool — confidential by construction, not by promise.",
 
   vaultEyebrow: "On-chain",
   vaultTitle: "Settled by smart contracts",
   vaultLead:
-    "Every market is created and resolved on Stellar via an oracle and an on-chain settlement contract. No custodian, no trust-me — verify each step on-chain.",
+    "Every market is created and resolved on Avalanche via a Chainlink oracle and an on-chain settlement contract. No custodian, no trust-me — verify each step on-chain.",
   vaultBullets: [
-    "Markets created and resolved on Soroban",
-    "Outcomes settled by the CLOB settlement contract",
-    "Every step verifiable on stellar.expert",
+    "Markets created and resolved by Solidity contracts",
+    "Outcomes settled by the PredictEscrow settlement contract",
+    "Every step verifiable on Snowtrace",
   ] as const,
   vaultCta: "Browse markets",
 
   keeperEyebrow: "Zero-knowledge",
   keeperTitle: "Provably private bets",
   keeperLead:
-    "A BLS12-381 Groth16 verifier checks proofs on-chain, so you can deposit, bet, and withdraw from the privacy pool without ever revealing your position.",
+    "A BN254 Groth16 verifier checks proofs on-chain, so you can deposit, bet, and withdraw from the privacy pool without ever revealing your position.",
   keeperBullets: [
     "Groth16 proofs verified on-chain",
     "Commitment Merkle tree plus nullifiers",
@@ -73,5 +73,5 @@ export const landingCopy = {
   ] as const,
   keeperCta: "How it works",
 
-  footnote: "Testnet · Built on Stellar & Soroban",
+  footnote: "Testnet · Built on Avalanche",
 } as const;

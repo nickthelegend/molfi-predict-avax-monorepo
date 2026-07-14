@@ -45,7 +45,7 @@ function CoverIllustration() {
             🔒 ZK-private
           </span>
           <span className="pitch-illus-cover-tag" data-pitch-illus-part>
-            Stellar · Reflector
+            Avalanche · Chainlink
           </span>
         </div>
         <svg viewBox="0 0 320 80" className="pitch-illus-cover-spark pitch-illus-draw" aria-hidden>
@@ -98,8 +98,8 @@ function ProblemIllustration() {
 function LayersIllustration() {
   const layers = [
     { name: "Molfi", sub: "Private bets · ZK proofs", accent: true },
-    { name: "Reflector", sub: "SEP-40 price oracle", accent: false },
-    { name: "Stellar · Soroban", sub: "On-chain settlement", accent: false },
+    { name: "Chainlink", sub: "Data Feeds price oracle", accent: false },
+    { name: "Avalanche · Fuji", sub: "On-chain settlement", accent: false },
   ];
 
   return (
