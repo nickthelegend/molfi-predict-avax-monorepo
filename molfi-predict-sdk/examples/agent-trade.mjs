@@ -4,10 +4,14 @@
  *   cd molfi-predict-sdk && npm install && npm run build
  *   node examples/agent-trade.mjs
  *
- * It generates a wallet, funds itself (friendbot + mUSDC faucet), reads the live
- * markets, and — if an on-chain market is available — places a REAL mUSDC bet
- * and reads back its escrowed position. Pass MOLFI_MARKET_ID=<32-byte hex> to
- * bet on a specific on-chain market.
+ * It generates a wallet, funds itself with mUSDC via the on-chain faucet, reads
+ * the live markets, and — if an on-chain market is available — places a REAL
+ * mUSDC bet and reads back its escrowed position. Pass MOLFI_MARKET_ID=<32-byte
+ * hex> to bet on a specific on-chain market.
+ *
+ * NOTE: a fresh wallet has 0 AVAX. Set MOLFI_FUNDER_KEY=<0x… funded EVM key>
+ * to have onboard() send this wallet gas automatically; otherwise fund
+ * `agent.address` with AVAX yourself before the bet tx below, or it reverts.
  */
 import { MolfiAgent, OUTCOME_YES } from "../dist/index.js";
 
@@ -17,9 +21,14 @@ const agent = MolfiAgent.create();
 log("🪪  new agent wallet:", agent.address);
 log("    (secret — keep safe):", agent.wallet.secret.slice(0, 8) + "…");
 
-log("\n⛽  onboarding (friendbot XLM + mUSDC faucet)…");
-const onboarded = await agent.onboard();
-log("    XLM funded:", onboarded.xlmFunded, "| mUSDC:", onboarded.musdc);
+log("\n⛽  onboarding (AVAX gas + mUSDC faucet)…");
+const onboarded = await agent.onboard(
+  process.env.MOLFI_FUNDER_KEY ? { funderKey: process.env.MOLFI_FUNDER_KEY } : undefined,
+);
+log("    gas funded:", onboarded.gasFunded, "| mUSDC:", onboarded.musdc);
+if (!onboarded.gasFunded) {
+  log("    ⚠️  no MOLFI_FUNDER_KEY set — this wallet has 0 AVAX; the bet below will revert until it's funded.");
+}
 
 log("\n📈  live markets (top 3 by implied YES odds):");
 const markets = await agent.markets();

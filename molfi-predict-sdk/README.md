@@ -29,7 +29,8 @@ import { MolfiAgent, OUTCOME_YES } from "molfi-predict-sdk";
 
 const agent = MolfiAgent.create();            // fresh EVM wallet
 await agent.onboard();                         // self-faucets mUSDC (10,000). Fund the
-                                               // wallet with AVAX for gas separately.
+                                               // wallet with AVAX for gas separately,
+                                               // or pass onboard({ funderKey }) to auto-fund gas.
 const markets = await agent.markets();         // live odds, OI, sentiment
 const [m]     = await agent.onChainMarkets();  // a 32-byte hex market id you can bet on
 await agent.bet(m.marketId, OUTCOME_YES, 100); // escrow 100 mUSDC on YES (real tx)

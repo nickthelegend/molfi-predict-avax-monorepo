@@ -15,7 +15,7 @@ export { MolfiAgent } from "./agent.js";
 export type { OnboardResult } from "./agent.js";
 export { MolfiChain } from "./chain.js";
 export type { Groth16Proof, ChainOptions } from "./chain.js";
-export { generateWallet, walletFromSecret, fundWithFriendbot } from "./wallet.js";
+export { generateWallet, walletFromSecret } from "./wallet.js";
 export type { MolfiWallet } from "./wallet.js";
 export {
   TESTNET,

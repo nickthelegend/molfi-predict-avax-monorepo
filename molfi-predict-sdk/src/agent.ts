@@ -11,13 +11,10 @@
  * money movement (faucet, bet, redeem) is real on-chain, signed by the agent's
  * own secp256k1 key via viem.
  */
+import { createWalletClient, http, parseEther, type Hex } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
 import { TESTNET, fromBaseUnits, type MolfiConfig } from "./config.js";
-import {
-  generateWallet,
-  walletFromSecret,
-  fundWithFriendbot,
-  type MolfiWallet,
-} from "./wallet.js";
+import { generateWallet, walletFromSecret, type MolfiWallet } from "./wallet.js";
 import { MolfiChain, type Groth16Proof } from "./chain.js";
 import {
   fetchMarkets,
@@ -29,10 +26,19 @@ import {
   fetchOnChainMarkets,
 } from "./data.js";
 
+/** Gas amount sent to a fresh agent wallet when `onboard({ funderKey })` is used. */
+const GAS_FUNDING_AVAX = "0.05";
+
 export interface OnboardResult {
   address: string;
-  /** Always false on Fuji (no friendbot); retained for shape compatibility. */
-  xlmFunded: boolean;
+  /**
+   * True only when `onboard()` was called with `funderKey` and the AVAX
+   * gas-funding transaction was sent and confirmed. If false, this wallet
+   * has NOT been given gas by `onboard()` — the caller is responsible for
+   * ensuring `address` holds AVAX before submitting any on-chain write
+   * (bet/redeem/etc.), or that write will revert for insufficient gas.
+   */
+  gasFunded: boolean;
   musdc: number;
 }
 
@@ -56,11 +62,34 @@ export class MolfiAgent {
     return this.wallet.address;
   }
 
-  /** Claim test mUSDC from the open faucet. (Gas AVAX must be funded separately.) */
-  async onboard(): Promise<OnboardResult> {
-    const xlmFunded = await fundWithFriendbot(this.address, this.config);
+  /**
+   * Onboard a fresh agent wallet: optionally fund it with AVAX gas, then
+   * claim test mUSDC from the open faucet.
+   *
+   * Pass `funderKey` (a funded `0x…` EVM private key) to actually send this
+   * wallet gas — WITHOUT it, `onboard()` does NOT fund gas, and this wallet's
+   * first on-chain write (bet/redeem/etc.) WILL REVERT unless `address`
+   * already holds AVAX from some other source.
+   */
+  async onboard(opts?: { funderKey?: Hex | string }): Promise<OnboardResult> {
+    let gasFunded = false;
+    if (opts?.funderKey) {
+      const key = (opts.funderKey.startsWith("0x") ? opts.funderKey : `0x${opts.funderKey}`) as Hex;
+      const funder = privateKeyToAccount(key);
+      const funderClient = createWalletClient({
+        account: funder,
+        chain: this.chain.chain,
+        transport: http(this.config.rpcUrl),
+      });
+      const hash = await funderClient.sendTransaction({
+        to: this.address as Hex,
+        value: parseEther(GAS_FUNDING_AVAX),
+      });
+      await this.chain.pub.waitForTransactionReceipt({ hash });
+      gasFunded = true;
+    }
     await this.chain.faucet();
-    return { address: this.address, xlmFunded, musdc: await this.musdc() };
+    return { address: this.address, gasFunded, musdc: await this.musdc() };
   }
 
   // ── Market data ──────────────────────────────────────────────────────────

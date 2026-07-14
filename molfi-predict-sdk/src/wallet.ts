@@ -1,12 +1,12 @@
 /**
- * Wallet generation + funding on Avalanche Fuji. An agent calls
- * `generateWallet()` to mint a fresh EVM (secp256k1) keypair. Fuji has no
- * friendbot — the operator/faucet funds gas + mUSDC (see the demo) — so
- * `fundWithFriendbot` is retained only as a no-op stub for import compatibility.
+ * Wallet generation on Avalanche Fuji. An agent calls `generateWallet()` to
+ * mint a fresh EVM (secp256k1) keypair. Fuji has no friendbot — a freshly
+ * generated wallet holds 0 AVAX and 0 mUSDC until it is funded. Gas (AVAX) is
+ * funded via `MolfiAgent.onboard({ funderKey })` (see agent.ts); mUSDC comes
+ * from the on-chain faucet.
  */
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import type { Hex } from "viem";
-import { TESTNET, type MolfiConfig } from "./config.js";
 
 export interface MolfiWallet {
   /** 0x… EVM address. */
@@ -29,15 +29,4 @@ export function walletFromSecret(secret: string): MolfiWallet {
   const key = (secret.startsWith("0x") ? secret : `0x${secret}`) as Hex;
   const account = privateKeyToAccount(key);
   return { publicKey: account.address, address: account.address, secret: key, privateKey: key };
-}
-
-/**
- * No-op on Fuji (there is no friendbot; gas comes from an operator faucet).
- * Kept so existing agent onboarding code compiles. Always resolves false.
- */
-export async function fundWithFriendbot(
-  _publicKey: string,
-  _config: MolfiConfig = TESTNET,
-): Promise<boolean> {
-  return false;
 }

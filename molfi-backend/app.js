@@ -13,7 +13,6 @@
  * app's own wallet does the real on-chain bets; /api/bet records to Mongo only.
  */
 import express from "express";
-import { readFileSync } from "node:fs";
 import { randomBytes, createHash } from "node:crypto";
 
 const FEE_RATE = 0.02; // 2% trading fee → LP vault
@@ -326,18 +325,16 @@ export function createApp({ db, chain, zk, lastPrice = {} }) {
             bets: 0,
           });
         }
-        if (rows.length) return res.json(rows.slice(0, 20));
-      } catch {
-        /* fall through to seeded file */
-      }
-      try {
-        const seeded = JSON.parse(readFileSync(new URL("./onchain_markets.json", import.meta.url), "utf8"));
-        return res.json(seeded.filter((m) => !m.closeTs || m.closeTs > Date.now()));
-      } catch {
+        return res.json(rows.slice(0, 20));
+      } catch (e) {
+        // Live on-chain read failed (RPC issue, etc). No index and no live
+        // data available — return an honest empty list instead of masking
+        // the outage with stale seeded data.
+        console.warn(`[onchain/markets] live chain read failed: ${e.message}`);
         return res.json([]);
       }
-    } catch {
-      res.json([]);
+    } catch (e) {
+      res.status(500).json({ error: e.message });
     }
   });
 

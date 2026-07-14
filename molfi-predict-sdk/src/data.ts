@@ -62,11 +62,17 @@ export interface Vault {
 }
 
 async function get<T>(config: MolfiConfig, path: string, fallback: T): Promise<T> {
+  const url = `${config.backendUrl}${path}`;
   try {
-    const r = await fetch(`${config.backendUrl}${path}`);
-    if (!r.ok) return fallback;
+    const r = await fetch(url);
+    if (!r.ok) {
+      console.warn(`[molfi-sdk] GET ${url} -> HTTP ${r.status} ${r.statusText}; using fallback`);
+      return fallback;
+    }
     return (await r.json()) as T;
-  } catch {
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.warn(`[molfi-sdk] GET ${url} failed (${msg}); using fallback`);
     return fallback;
   }
 }
