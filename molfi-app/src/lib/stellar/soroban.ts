@@ -96,7 +96,14 @@ const CBET_ABI = [
 
 const asHex = (h: string): Hex => (h.startsWith("0x") ? (h as Hex) : (`0x${h}` as Hex));
 const toBase = (amountUsdc: number): bigint => parseUnits(String(amountUsdc), MUSDC_DECIMALS);
+// A bare hex digest (e.g. a sha256 commitment) → 0x-prefixed then BigInt.
 const bigHex = (h: string): bigint => BigInt(asHex(h));
+// A field element the backend emits as a DECIMAL string (snarkjs publicSignals:
+// root, nullifierHash, proof coords). BigInt() parses decimal and 0x-hex alike —
+// but must NOT be 0x-prefixed first, or the decimal would be reparsed as hex and
+// overflow uint256. (This is why publicInputs/root/nullifierHash use bigField,
+// NOT bigHex.)
+const bigField = (n: string): bigint => BigInt(n);
 
 /** Convert a proof (snarkjs pi_* form, or {a,b,c} as hex/decimal string arrays)
  * into the Solidity Groth16 calldata shape the on-chain verifier expects. */
@@ -287,7 +294,7 @@ export async function escrowBetZk(
   const amount = toBase(amountUsdc);
   await ensureAllowance(walletAddress, CONTRACTS.predictEscrow, amount);
   const { a, b, c } = toSolProof(proof);
-  const pub = [bigHex(publicInputs[0]), bigHex(publicInputs[1]), bigHex(publicInputs[2]), bigHex(publicInputs[3])];
+  const pub = [bigField(publicInputs[0]), bigField(publicInputs[1]), bigField(publicInputs[2]), bigField(publicInputs[3])];
   return send(CONTRACTS.predictEscrow, ESCROW_ABI, "betZk", [asHex(marketIdHex), outcome, amount, a, b, c, pub]);
 }
 
@@ -332,8 +339,8 @@ export async function confidentialClaim(
     a,
     b,
     c,
-    bigHex(rootHex),
-    bigHex(nullifierHashHex),
+    bigField(rootHex),
+    bigField(nullifierHashHex),
     getAddress(walletAddress),
   ]);
 }
