@@ -133,7 +133,7 @@ export function WelcomeDialog() {
           <div className="relative z-10 flex flex-col items-center gap-3">
             <div className="flex items-center gap-3">
               <AppLogo size="md" className="landing-logo" />
-              <span className="font-display text-xl font-bold tracking-tight">{APP_NAME}</span>
+              <span className="brand-name text-xl">{APP_NAME}</span>
             </div>
             <div
               className="welcome-dialog-steps"

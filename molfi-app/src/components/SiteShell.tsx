@@ -41,7 +41,7 @@ export function SiteShell({ children, fullWidth, mainClassName, fixedChrome, jar
             className="site-header-brand flex shrink-0 items-center gap-2"
           >
             <AppLogo />
-            <span className="hidden bg-gradient-to-r from-[#d9b8ff] via-[#a878ff] to-[#7b5cff] bg-clip-text text-[1.05rem] font-extrabold lowercase tracking-tight text-transparent min-[400px]:inline">
+            <span className="brand-name hidden text-[1.2rem] lowercase min-[400px]:inline">
               {APP_NAME}
             </span>
           </Link>
