@@ -250,9 +250,9 @@ Source of truth: `molfi-contracts/deployments-fuji.json`.
 
 | Contract | Address |
 |---|---|
-| `MolfiMarket` | `0xF260A7a44c7e6868D124dFcC4F13982C2eF42f8f` |
-| `PredictEscrow` | `0xBeA24615324465bc0e7227AcaA1F539533165EEF` |
-| `ConfidentialBet` | `0xEd1db687779eE2646162b70Bd3838AF8f4EeF6B3` |
+| `MolfiMarket` | `0xBded9535cbe128f09A8CC1a97dDFb339f22CBc9b` |
+| `PredictEscrow` | `0xfe00776f7EFc1208F2B89A34d6Acd408a0410c9c` |
+| `ConfidentialBet` | `0x5DAFB4217088dFB79dee6d780ED7437DC9D42E84` |
 | `mUSDC` (collateral) | `0xADE818616EA14903278E9cE11c2BfFfa4eEB682C` |
 | `confidentialBetVerifier` (Groth16, BN254) | `0xCA791da6e0e2DB1C5B36Eb297B2d7bE05dc01EBB` |
 | eERC `cUSD` (confidential stakes) | `0x320C389607d109B12836D6B8F507C7e87783cf82` |

@@ -11,7 +11,7 @@ import * as realZk from "../zk.js";
 /** A deterministic mock of chain.js — no network, no transactions. */
 export function mockChain(overrides = {}) {
   return {
-    CONTRACTS: { predictEscrow: "0xBeA24615324465bc0e7227AcaA1F539533165EEF" },
+    CONTRACTS: { predictEscrow: "0xfe00776f7EFc1208F2B89A34d6Acd408a0410c9c" },
     U: 10_000_000,
     async listMarketIds() {
       return [];

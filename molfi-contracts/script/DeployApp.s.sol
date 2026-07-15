@@ -36,11 +36,13 @@ contract DeployApp is Script {
         MockUSD(MUSD).mint(dep, 50_000 * DENOM);
 
         // A spread of markets on the LIVE Chainlink BTC/USD feed. `op` 0 = YES iff
-        // price >= threshold. closeTs = now → resolvable immediately; +7d → open.
+        // price >= threshold. Markets must close in the FUTURE (createPriceMarket rejects
+        // closeTs <= now): "now" markets close in 5 min (briefly open then resolvable), +7d open.
         uint64 nowTs = uint64(block.timestamp);
+        uint64 soon = nowTs + 5 minutes;
         uint64 wk = nowTs + 7 days;
-        _seed(market, "molfi:BTC>=50k@now", "Is BTC >= $50,000 right now?", nowTs, int256(50_000e8));
-        _seed(market, "molfi:BTC>=100k@now", "Is BTC >= $100,000 right now?", nowTs, int256(100_000e8));
+        _seed(market, "molfi:BTC>=50k@now", "Is BTC >= $50,000 right now?", soon, int256(50_000e8));
+        _seed(market, "molfi:BTC>=100k@now", "Is BTC >= $100,000 right now?", soon, int256(100_000e8));
         _seed(market, "molfi:BTC>=75k@7d", "Will BTC be >= $75,000 in 7 days?", wk, int256(75_000e8));
         _seed(market, "molfi:BTC>=120k@7d", "Will BTC hit $120,000 within 7 days?", wk, int256(120_000e8));
         _seed(market, "molfi:BTC>=90k@7d", "Will BTC be >= $90,000 in 7 days?", wk, int256(90_000e8));

@@ -14,8 +14,8 @@ import { fileURLToPath } from "node:url";
 import { readFileSync } from "node:fs";
 
 // ── deployed molfi contracts on Fuji (shared with the molfi-app deployment) ───
-const MARKET = "0xF260A7a44c7e6868D124dFcC4F13982C2eF42f8f";
-const CBET = "0xEd1db687779eE2646162b70Bd3838AF8f4EeF6B3";
+const MARKET = "0xBded9535cbe128f09A8CC1a97dDFb339f22CBc9b";
+const CBET = "0x5DAFB4217088dFB79dee6d780ED7437DC9D42E84";
 const MUSD = "0xADE818616EA14903278E9cE11c2BfFfa4eEB682C";
 const BTC_USD = "0x31CF013A08c6Ac228C94551d535d5BAfE19c602a"; // Chainlink BTC/USD (Fuji)
 const DENOM = 10_000_000n;

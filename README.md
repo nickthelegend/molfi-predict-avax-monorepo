@@ -74,9 +74,9 @@ see [`TESTING.md`](./TESTING.md).
 
 | Contract | Address |
 |---|---|
-| `MolfiMarket` (Chainlink-resolved, enumerable) | [`0xF260A7a44c7e6868D124dFcC4F13982C2eF42f8f`](https://testnet.snowtrace.io/address/0xF260A7a44c7e6868D124dFcC4F13982C2eF42f8f) |
-| `PredictEscrow` (real-mUSDC pari-mutuel + ZK-gated bets) | [`0xBeA24615324465bc0e7227AcaA1F539533165EEF`](https://testnet.snowtrace.io/address/0xBeA24615324465bc0e7227AcaA1F539533165EEF) |
-| `ConfidentialBet` (hidden side + ZK claim) | [`0xEd1db687779eE2646162b70Bd3838AF8f4EeF6B3`](https://testnet.snowtrace.io/address/0xEd1db687779eE2646162b70Bd3838AF8f4EeF6B3) |
+| `MolfiMarket` (Chainlink-resolved, enumerable) | [`0xBded9535cbe128f09A8CC1a97dDFb339f22CBc9b`](https://testnet.snowtrace.io/address/0xBded9535cbe128f09A8CC1a97dDFb339f22CBc9b) |
+| `PredictEscrow` (real-mUSDC pari-mutuel + ZK-gated bets) | [`0xfe00776f7EFc1208F2B89A34d6Acd408a0410c9c`](https://testnet.snowtrace.io/address/0xfe00776f7EFc1208F2B89A34d6Acd408a0410c9c) |
+| `ConfidentialBet` (hidden side + ZK claim) | [`0x5DAFB4217088dFB79dee6d780ED7437DC9D42E84`](https://testnet.snowtrace.io/address/0x5DAFB4217088dFB79dee6d780ED7437DC9D42E84) |
 | Groth16 verifier (BN254) | `0xCA791da6e0e2DB1C5B36Eb297B2d7bE05dc01EBB` |
 | `mUSDC` collateral | `0xADE818616EA14903278E9cE11c2BfFfa4eEB682C` |
 | **eERC `cUSD`** (confidential stakes) | `0x320C389607d109B12836D6B8F507C7e87783cf82` |

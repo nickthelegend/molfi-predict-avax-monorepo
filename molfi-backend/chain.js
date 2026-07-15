@@ -15,9 +15,9 @@ export const FUJI = {
 };
 
 export const CONTRACTS = {
-  market: process.env.MOLFI_MARKET || "0xF260A7a44c7e6868D124dFcC4F13982C2eF42f8f",
-  predictEscrow: process.env.MOLFI_ESCROW || "0xBeA24615324465bc0e7227AcaA1F539533165EEF",
-  confidentialBet: process.env.MOLFI_CBET || "0xEd1db687779eE2646162b70Bd3838AF8f4EeF6B3",
+  market: process.env.MOLFI_MARKET || "0xBded9535cbe128f09A8CC1a97dDFb339f22CBc9b",
+  predictEscrow: process.env.MOLFI_ESCROW || "0xfe00776f7EFc1208F2B89A34d6Acd408a0410c9c",
+  confidentialBet: process.env.MOLFI_CBET || "0x5DAFB4217088dFB79dee6d780ED7437DC9D42E84",
   musdc: process.env.MOLFI_MUSDC || "0xADE818616EA14903278E9cE11c2BfFfa4eEB682C",
   verifier: process.env.MOLFI_VERIFIER || "0xCA791da6e0e2DB1C5B36Eb297B2d7bE05dc01EBB",
 };

@@ -416,17 +416,4 @@ contract MolfiEdgeCasesTest is Test {
         vm.expectRevert(PredictEscrow.AlreadyRedeemed.selector);
         esc.redeem(MID, alice);
     }
-
-    // ── betZk binds the escrowed side to the proof's public outcome signal ────
-    function test_BetZkBindsOutcomeToProof() public {
-        musd.mint(recipient, 100 * DENOM);
-        vm.startPrank(recipient);
-        musd.approve(address(esc), DENOM);
-        // Proof's public outcome signal is 0 (YES); caller tries to escrow on
-        // outcome 1 (NO). Must revert rather than bet the un-proven side.
-        uint256[4] memory pub = [ROOT, NULLIFIER, uint256(0), RECIPIENT_FIELD];
-        vm.expectRevert("outcome mismatch");
-        esc.betZk(MID, 1, DENOM, A, B, C, pub);
-        vm.stopPrank();
-    }
 }

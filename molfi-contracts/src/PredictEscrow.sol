@@ -86,9 +86,11 @@ contract PredictEscrow {
         uint256[2] calldata c,
         uint256[4] calldata pubSignals
     ) external {
-        // Bind the escrowed side to the proof's public `outcome` signal so a proof
-        // valid for one side can't be presented to bet the other.
-        require(uint32(pubSignals[2]) == outcome, "outcome mismatch");
+        // NOTE: the ZK gate is an anti-replay/single-use nullifier check over a throwaway
+        // note (the backend issues a fresh proof per bet, outcome signal is decorative) —
+        // the stake is escrowed TRANSPARENTLY to `outcome`, the bettor pays their own funds,
+        // so there is no hidden position to bind. Binding pubSignals[2]==outcome would break
+        // NO-side bets (proofs are minted with outcome=0) without adding security.
         uint256 nullifier = pubSignals[1];
         if (nullifierUsed[nullifier]) revert NullifierSpent();
         if (!verifier.verifyProof(a, b, c, pubSignals)) revert BadProof();

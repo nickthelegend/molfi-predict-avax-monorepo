@@ -25,15 +25,15 @@ export const CONTRACTS = {
     "0xCA791da6e0e2DB1C5B36Eb297B2d7bE05dc01EBB",
   market:
     (import.meta.env.VITE_MARKET_CONTRACT_ID as string | undefined) ??
-    "0xF260A7a44c7e6868D124dFcC4F13982C2eF42f8f",
+    "0xBded9535cbe128f09A8CC1a97dDFb339f22CBc9b",
   /** predict-escrow — real-mUSDC pari-mutuel betting + on-chain ZK-gated bets. */
   predictEscrow:
     (import.meta.env.VITE_PREDICT_ESCROW_CONTRACT_ID as string | undefined) ??
-    "0xBeA24615324465bc0e7227AcaA1F539533165EEF",
+    "0xfe00776f7EFc1208F2B89A34d6Acd408a0410c9c",
   /** confidential-bet — hidden-side commitment notes + on-chain ZK claim. */
   confidentialBet:
     (import.meta.env.VITE_CONF_BET_CONTRACT_ID as string | undefined) ??
-    "0xEd1db687779eE2646162b70Bd3838AF8f4EeF6B3",
+    "0x5DAFB4217088dFB79dee6d780ED7437DC9D42E84",
   /** mUSDC — Molfi's testnet stablecoin with an open faucet (7 decimals). */
   musdc:
     (import.meta.env.VITE_MUSDC_CONTRACT_ID as string | undefined) ??
@@ -45,10 +45,10 @@ export const CONTRACTS = {
   // ── legacy aliases kept for display links; escrow is the single settlement contract ──
   clobSettlement:
     (import.meta.env.VITE_PREDICT_ESCROW_CONTRACT_ID as string | undefined) ??
-    "0xBeA24615324465bc0e7227AcaA1F539533165EEF",
+    "0xfe00776f7EFc1208F2B89A34d6Acd408a0410c9c",
   vault:
     (import.meta.env.VITE_PREDICT_ESCROW_CONTRACT_ID as string | undefined) ??
-    "0xBeA24615324465bc0e7227AcaA1F539533165EEF",
+    "0xfe00776f7EFc1208F2B89A34d6Acd408a0410c9c",
 } as const;
 
 /** Chainlink BTC/USD data feed on Fuji (8 decimals) — resolves the seeded markets. */
