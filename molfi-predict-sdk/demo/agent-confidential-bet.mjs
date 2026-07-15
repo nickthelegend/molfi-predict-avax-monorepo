@@ -88,11 +88,14 @@ console.log(`  committed hidden bet · ${snow(commitTx)}`);
 
 // 4) operator opens a market on the LIVE Chainlink BTC/USD feed + checkpoints root
 const mid = keccak256(toHex(`molfi-agent-${agent.address}-${Date.now()}`));
-const now = BigInt(Math.floor(Date.now() / 1000));
-await send(opWallet, { address: MARKET, abi: MARKET_ABI, functionName: "createPriceMarket", args: [mid, "Will BTC be >= $50,000?", now, BTC_USD, 50000n * 10n ** 8n, 0, 86400n] });
+// closeTs must be in the FUTURE (MolfiMarket rejects closeTs <= now); a few seconds
+// out, then we wait for it to pass before resolving.
+const closeTs = BigInt(Math.floor(Date.now() / 1000) + 3);
+await send(opWallet, { address: MARKET, abi: MARKET_ABI, functionName: "createPriceMarket", args: [mid, "Will BTC be >= $50,000?", closeTs, BTC_USD, 50000n * 10n ** 8n, 0, 86400n] });
 await send(opWallet, { address: CBET, abi: CBET_ABI, functionName: "registerRoot", args: [root] });
 
-// 5) resolve from Chainlink (permissionless)
+// 5) resolve from Chainlink (permissionless) — wait until the market has closed
+while (BigInt((await pub.getBlock()).timestamp) < closeTs) await new Promise((r) => setTimeout(r, 2000));
 const resolveTx = await send(opWallet, { address: MARKET, abi: MARKET_ABI, functionName: "resolveFromOracle", args: [mid] });
 const winner = await pub.readContract({ address: MARKET, abi: MARKET_ABI, functionName: "winningOutcome", args: [mid] });
 console.log(`  market resolved from Chainlink → winner ${winner === 0 ? "YES" : "NO"} · ${snow(resolveTx)}`);
