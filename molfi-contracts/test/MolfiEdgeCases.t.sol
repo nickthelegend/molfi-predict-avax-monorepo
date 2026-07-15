@@ -139,7 +139,8 @@ contract MolfiEdgeCasesTest is Test {
         assertEq(esc.pool(MID, 0), 60 * DENOM);
         assertEq(esc.pool(MID, 1), 15 * DENOM);
 
-        market.createPriceMarket(MID, "q", uint64(block.timestamp), address(feed), int256(60000e8), 0, 3600);
+        market.createPriceMarket(MID, "q", uint64(block.timestamp + 1), address(feed), int256(60000e8), 0, 3600);
+        vm.warp(block.timestamp + 1);
         market.resolveFromOracle(MID); // YES wins ($65k >= $60k)
 
         uint256 vaultBefore = musd.balanceOf(vault);
@@ -177,7 +178,8 @@ contract MolfiEdgeCasesTest is Test {
         esc.bet(MID, 0, 10 * DENOM);
         vm.stopPrank();
 
-        market.createPriceMarket(MID, "q", uint64(block.timestamp), address(feed), int256(60000e8), 0, 3600);
+        market.createPriceMarket(MID, "q", uint64(block.timestamp + 1), address(feed), int256(60000e8), 0, 3600);
+        vm.warp(block.timestamp + 1);
         market.resolveFromOracle(MID);
 
         esc.redeem(MID, alice);
@@ -288,9 +290,9 @@ contract MolfiEdgeCasesTest is Test {
     }
 
     function test_DuplicateCreatePriceMarketReverts() public {
-        market.createPriceMarket(MID, "q", uint64(block.timestamp), address(feed), int256(60000e8), 0, 3600);
+        market.createPriceMarket(MID, "q", uint64(block.timestamp + 1), address(feed), int256(60000e8), 0, 3600);
         vm.expectRevert(MolfiMarket.Exists.selector);
-        market.createPriceMarket(MID, "q2", uint64(block.timestamp), address(feed), int256(60000e8), 0, 3600);
+        market.createPriceMarket(MID, "q2", uint64(block.timestamp + 1), address(feed), int256(60000e8), 0, 3600);
     }
 
     function test_ResolveFromOracleRevertsBeforeClose() public {
@@ -302,7 +304,8 @@ contract MolfiEdgeCasesTest is Test {
     }
 
     function test_ResolveFromOracleRevertsIfAlreadyResolved() public {
-        market.createPriceMarket(MID, "q", uint64(block.timestamp), address(feed), int256(60000e8), 0, 3600);
+        market.createPriceMarket(MID, "q", uint64(block.timestamp + 1), address(feed), int256(60000e8), 0, 3600);
+        vm.warp(block.timestamp + 1);
         market.resolveFromOracle(MID);
         vm.expectRevert(MolfiMarket.AlreadyResolved.selector);
         market.resolveFromOracle(MID);
@@ -316,7 +319,8 @@ contract MolfiEdgeCasesTest is Test {
     function test_ResolveFromOracle_NoOutcome() public {
         // price below threshold → NO (outcome 1)
         feed.setAnswer(int256(40000e8));
-        market.createPriceMarket(MID, "q", uint64(block.timestamp), address(feed), int256(60000e8), 0, 3600);
+        market.createPriceMarket(MID, "q", uint64(block.timestamp + 1), address(feed), int256(60000e8), 0, 3600);
+        vm.warp(block.timestamp + 1);
         market.resolveFromOracle(MID);
         assertTrue(market.isResolved(MID));
         assertEq(market.winningOutcome(MID), 1, "NO wins");
@@ -371,5 +375,58 @@ contract MolfiEdgeCasesTest is Test {
 
         vm.expectRevert(PredictEscrow.NotResolved.selector);
         esc.redeem(ghost, alice);
+    }
+
+    // ── Zero-winning-pool refund: nobody staked the winner → stakes returned ──
+    function test_RedeemRefundsWhenWinningPoolEmpty() public {
+        address alice = address(0xA11CE);
+        address bob = address(0xB0B);
+        musd.mint(alice, 100 * DENOM);
+        musd.mint(bob, 100 * DENOM);
+
+        // Everyone bets NO(1); nobody bets YES(0).
+        vm.startPrank(alice);
+        musd.approve(address(esc), 10 * DENOM);
+        esc.bet(MID, 1, 10 * DENOM);
+        vm.stopPrank();
+        vm.startPrank(bob);
+        musd.approve(address(esc), 30 * DENOM);
+        esc.bet(MID, 1, 30 * DENOM);
+        vm.stopPrank();
+
+        // Resolve YES ($65k >= $60k) → winning outcome 0, but pool[0] == 0.
+        market.createPriceMarket(MID, "q", uint64(block.timestamp + 1), address(feed), int256(60000e8), 0, 3600);
+        vm.warp(block.timestamp + 1);
+        market.resolveFromOracle(MID);
+        assertEq(market.winningOutcome(MID), 0);
+        assertEq(esc.pool(MID, 0), 0, "winning pool empty");
+
+        // Each better is refunded exactly their own stake, no fee.
+        uint256 aliceBefore = musd.balanceOf(alice);
+        esc.redeem(MID, alice);
+        assertEq(musd.balanceOf(alice) - aliceBefore, 10 * DENOM, "alice refunded stake");
+
+        uint256 bobBefore = musd.balanceOf(bob);
+        esc.redeem(MID, bob);
+        assertEq(musd.balanceOf(bob) - bobBefore, 30 * DENOM, "bob refunded stake");
+
+        assertEq(musd.balanceOf(vault), 0, "no fee taken on a refund");
+
+        // Double-refund is blocked by the redeemed map.
+        vm.expectRevert(PredictEscrow.AlreadyRedeemed.selector);
+        esc.redeem(MID, alice);
+    }
+
+    // ── betZk binds the escrowed side to the proof's public outcome signal ────
+    function test_BetZkBindsOutcomeToProof() public {
+        musd.mint(recipient, 100 * DENOM);
+        vm.startPrank(recipient);
+        musd.approve(address(esc), DENOM);
+        // Proof's public outcome signal is 0 (YES); caller tries to escrow on
+        // outcome 1 (NO). Must revert rather than bet the un-proven side.
+        uint256[4] memory pub = [ROOT, NULLIFIER, uint256(0), RECIPIENT_FIELD];
+        vm.expectRevert("outcome mismatch");
+        esc.betZk(MID, 1, DENOM, A, B, C, pub);
+        vm.stopPrank();
     }
 }

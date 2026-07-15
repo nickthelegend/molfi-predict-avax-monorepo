@@ -63,12 +63,13 @@ contract MolfiTest is Test {
 
     function test_ChainlinkResolvesYesAndConfidentialClaimPays() public {
         // create a Chainlink price market: YES iff BTC >= $60k, closes now
-        market.createPriceMarket(MID, "Will BTC be >= $60k at close?", uint64(block.timestamp), address(feed), int256(60000e8), 0, 3600);
+        market.createPriceMarket(MID, "Will BTC be >= $60k at close?", uint64(block.timestamp + 1), address(feed), int256(60000e8), 0, 3600);
 
         // a hidden-side bet (commitment is opaque; side is off-chain)
         cbet.commit(uint256(0xC0FFEE));
 
-        // resolve permissionlessly from Chainlink
+        // resolve permissionlessly from Chainlink (warp to close first)
+        vm.warp(block.timestamp + 1);
         market.resolveFromOracle(MID);
         assertTrue(market.isResolved(MID));
         assertEq(market.winningOutcome(MID), 0, "YES wins");
@@ -84,7 +85,8 @@ contract MolfiTest is Test {
     }
 
     function test_ReplayRejected() public {
-        market.createPriceMarket(MID, "q", uint64(block.timestamp), address(feed), int256(60000e8), 0, 3600);
+        market.createPriceMarket(MID, "q", uint64(block.timestamp + 1), address(feed), int256(60000e8), 0, 3600);
+        vm.warp(block.timestamp + 1);
         market.resolveFromOracle(MID);
         cbet.registerRoot(ROOT);
         cbet.claim(MID, A, B, C, ROOT, NULLIFIER, recipient);
@@ -95,7 +97,8 @@ contract MolfiTest is Test {
     function test_LoserCannotClaim() public {
         // resolve NO (BTC below threshold) → the YES proof's outcome(0) != winner(1)
         feed.setAnswer(int256(50000e8)); // $50k < $60k → NO
-        market.createPriceMarket(MID, "q", uint64(block.timestamp), address(feed), int256(60000e8), 0, 3600);
+        market.createPriceMarket(MID, "q", uint64(block.timestamp + 1), address(feed), int256(60000e8), 0, 3600);
+        vm.warp(block.timestamp + 1);
         market.resolveFromOracle(MID);
         assertEq(market.winningOutcome(MID), 1, "NO wins");
         cbet.registerRoot(ROOT);
@@ -105,8 +108,8 @@ contract MolfiTest is Test {
     }
 
     function test_StaleFeedRejected() public {
-        market.createPriceMarket(MID, "q", uint64(block.timestamp), address(feed), int256(60000e8), 0, 60);
-        vm.warp(block.timestamp + 120); // feed now stale (>60s)
+        market.createPriceMarket(MID, "q", uint64(block.timestamp + 1), address(feed), int256(60000e8), 0, 60);
+        vm.warp(block.timestamp + 120); // past close; feed now stale (>60s)
         vm.expectRevert(MolfiMarket.StalePrice.selector);
         market.resolveFromOracle(MID);
     }
@@ -143,7 +146,8 @@ contract MolfiTest is Test {
         assertEq(esc.pool(MID, 0), 30 * DENOM);
 
         // resolve YES from Chainlink (BTC $65k >= $60k)
-        market.createPriceMarket(MID, "q", uint64(block.timestamp), address(feed), int256(60000e8), 0, 3600);
+        market.createPriceMarket(MID, "q", uint64(block.timestamp + 1), address(feed), int256(60000e8), 0, 3600);
+        vm.warp(block.timestamp + 1);
         market.resolveFromOracle(MID);
 
         // Alice (sole YES bettor) redeems the whole 40 pool minus 2% fee

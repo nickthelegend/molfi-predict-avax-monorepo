@@ -43,7 +43,11 @@ test("confidential/prepare-claim WON path generates a real proof for the winning
   });
   try {
     const note = { secret: zk.confField(), nullifier: zk.confField(), outcome: 0, recipient: zk.confField() };
-    const { status, body } = await h.post("/api/confidential/prepare-claim", { note, marketId: "0xfeed" });
+    const { status, body } = await h.post("/api/confidential/prepare-claim", {
+      note,
+      marketId: "0xfeed",
+      recipient: "0x1111111111111111111111111111111111111111",
+    });
     assert.equal(status, 200);
     assert.equal(body.resolved, true);
     assert.equal(body.won, true);

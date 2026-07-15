@@ -291,6 +291,7 @@ export async function escrowBetZk(
   publicInputs: string[],
   _domain: string,
 ): Promise<string> {
+  if (!publicInputs || publicInputs.length < 4) throw new Error("bad public inputs");
   const amount = toBase(amountUsdc);
   await ensureAllowance(walletAddress, CONTRACTS.predictEscrow, amount);
   const { a, b, c } = toSolProof(proof);

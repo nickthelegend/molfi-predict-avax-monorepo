@@ -204,9 +204,25 @@ test("confidential/prepare-claim: unresolved market → {resolved:false}", async
   const { status, body } = await h.post("/api/confidential/prepare-claim", {
     note: { secret: "1", nullifier: "2", outcome: 0, recipient: "3" },
     marketId: "0xfeed",
+    recipient: "0x1111111111111111111111111111111111111111",
   });
   assert.equal(status, 200);
   assert.equal(body.resolved, false);
+});
+
+test("confidential/prepare-claim: missing recipient or non-numeric outcome → 400", async () => {
+  const noRecipient = await h.post("/api/confidential/prepare-claim", {
+    note: { secret: "1", nullifier: "2", outcome: 0, recipient: "3" },
+    marketId: "0xfeed",
+  });
+  assert.equal(noRecipient.status, 400);
+
+  const badOutcome = await h.post("/api/confidential/prepare-claim", {
+    note: { secret: "1", nullifier: "2", outcome: "nope", recipient: "3" },
+    marketId: "0xfeed",
+    recipient: "0x1111111111111111111111111111111111111111",
+  });
+  assert.equal(badOutcome.status, 400);
 });
 
 test("confidential/prepare-claim: resolved but losing side → won:false (no proof burned)", async () => {
@@ -218,6 +234,7 @@ test("confidential/prepare-claim: resolved but losing side → won:false (no pro
     const { status, body } = await local.post("/api/confidential/prepare-claim", {
       note: { secret: "1", nullifier: "2", outcome: 0, recipient: "3" },
       marketId: "0xfeed",
+      recipient: "0x1111111111111111111111111111111111111111",
     });
     assert.equal(status, 200);
     assert.equal(body.resolved, true);

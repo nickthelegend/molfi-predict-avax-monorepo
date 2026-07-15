@@ -46,6 +46,9 @@ contract MolfiMarket {
     error NotClosed();
     error AlreadyResolved();
     error StalePrice();
+    error BadOp();
+    error BadClose();
+    error BadOutcome();
 
     modifier onlyAdmin() {
         if (msg.sender != admin) revert NotAdmin();
@@ -59,6 +62,7 @@ contract MolfiMarket {
     /// Basic (admin-resolved) market.
     function create(bytes32 id, string calldata question, uint64 closeTs) external onlyAdmin {
         if (marketOf[id].exists) revert Exists();
+        if (closeTs <= block.timestamp) revert BadClose();
         marketOf[id] = Market(question, closeTs, address(0), 0, 0, 0, Status.Trading, 0, true, false);
         marketIds.push(id);
         emit MarketCreated(id, question, closeTs, address(0));
@@ -75,6 +79,8 @@ contract MolfiMarket {
         uint64 maxStaleness
     ) external onlyAdmin {
         if (marketOf[id].exists) revert Exists();
+        if (op > 1) revert BadOp();
+        if (closeTs <= block.timestamp) revert BadClose();
         marketOf[id] =
             Market(question, closeTs, oracle, threshold, op, maxStaleness, Status.Trading, 0, true, true);
         marketIds.push(id);
@@ -88,9 +94,14 @@ contract MolfiMarket {
         if (block.timestamp < m.closeTs) revert NotClosed();
         if (m.status == Status.Resolved) revert AlreadyResolved();
 
-        (, int256 price,, uint256 updatedAt,) = IAggregatorV3(m.oracle).latestRoundData();
-        // Chainlink freshness: never trust a stale round.
-        if (updatedAt == 0 || block.timestamp - updatedAt > m.maxStaleness) revert StalePrice();
+        (uint80 roundId, int256 price,, uint256 updatedAt, uint80 answeredInRound) =
+            IAggregatorV3(m.oracle).latestRoundData();
+        // Chainlink freshness: never trust a stale, non-positive, or future-dated round.
+        if (price <= 0) revert StalePrice();
+        if (updatedAt == 0 || updatedAt > block.timestamp || block.timestamp - updatedAt > m.maxStaleness) {
+            revert StalePrice();
+        }
+        if (answeredInRound < roundId) revert StalePrice();
 
         bool yes = m.op == 0 ? (price >= m.threshold) : (price < m.threshold);
         m.winningOutcome = yes ? 0 : 1;
@@ -102,6 +113,7 @@ contract MolfiMarket {
     function resolve(bytes32 id, uint32 outcome) external onlyAdmin {
         Market storage m = marketOf[id];
         if (!m.exists) revert Missing();
+        if (outcome > 1) revert BadOutcome();
         if (m.status == Status.Resolved) revert AlreadyResolved();
         m.winningOutcome = outcome;
         m.status = Status.Resolved;

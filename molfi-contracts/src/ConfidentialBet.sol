@@ -109,6 +109,7 @@ contract ConfidentialBet {
 
         nullifierUsed[nullifierHash] = true;
         uint256 payout = denom * PAYOUT_MULT;
+        require(collateral.balanceOf(address(this)) >= payout, "insufficient pool");
         require(collateral.transfer(recipient, payout), "payout failed");
         emit Claim(nullifierHash, recipient, payout);
     }

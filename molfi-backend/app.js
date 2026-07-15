@@ -398,6 +398,10 @@ export function createApp({ db, chain, zk, lastPrice = {} }) {
     try {
       const { note, marketId, recipient } = req.body || {};
       if (!note || !marketId) return res.status(400).json({ error: "note + marketId required" });
+      if (!recipient) return res.status(400).json({ error: "recipient required" });
+      if (note.outcome == null || Number.isNaN(Number(note.outcome))) {
+        return res.status(400).json({ error: "note.outcome must be a number" });
+      }
       let resolved = false;
       try {
         resolved = await chain.isResolved(marketId);

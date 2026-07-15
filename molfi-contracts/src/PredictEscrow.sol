@@ -49,6 +49,7 @@ contract PredictEscrow {
     error NoWinningPosition();
     error NullifierSpent();
     error BadProof();
+    error MarketClosed();
 
     constructor(IERC20 _musdc, IPredictVerifier _verifier, IMarketRef _market, address _vault) {
         musdc = _musdc;
@@ -59,6 +60,9 @@ contract PredictEscrow {
 
     function _escrow(bytes32 marketId, uint32 outcome, uint256 amount) internal {
         if (amount == 0) revert ZeroAmount();
+        // No new stake once the market has resolved — a late bet could never be
+        // redeemed fairly (it isn't part of the pool the winners split).
+        if (market.isResolved(marketId)) revert MarketClosed();
         require(musdc.transferFrom(msg.sender, address(this), amount), "transfer failed");
         pool[marketId][outcome] += amount;
         total[marketId] += amount;
@@ -82,6 +86,9 @@ contract PredictEscrow {
         uint256[2] calldata c,
         uint256[4] calldata pubSignals
     ) external {
+        // Bind the escrowed side to the proof's public `outcome` signal so a proof
+        // valid for one side can't be presented to bet the other.
+        require(uint32(pubSignals[2]) == outcome, "outcome mismatch");
         uint256 nullifier = pubSignals[1];
         if (nullifierUsed[nullifier]) revert NullifierSpent();
         if (!verifier.verifyProof(a, b, c, pubSignals)) revert BadProof();
@@ -96,14 +103,26 @@ contract PredictEscrow {
         redeemed[marketId][bettor] = true;
 
         uint32 win = market.winningOutcome(marketId);
+        uint256 winPool = pool[marketId][win];
+
+        // Degenerate market: nobody staked the winning side, so there is no
+        // pro-rata pool to split. Refund each caller their own stake (no fee)
+        // instead of locking the losing side's funds forever.
+        if (winPool == 0) {
+            net = position[marketId][0][bettor] + position[marketId][1][bettor];
+            if (net == 0) revert NoWinningPosition();
+            require(musdc.transfer(bettor, net), "refund failed");
+            emit Redeem(marketId, bettor, net);
+            return net;
+        }
+
         uint256 stake = position[marketId][win][bettor];
         if (stake == 0) revert NoWinningPosition();
 
-        uint256 winPool = pool[marketId][win];
         uint256 gross = (stake * total[marketId]) / winPool;
         uint256 fee = (gross * FEE_BPS) / 10_000;
         net = gross - fee;
-        if (vault != address(0) && fee > 0) musdc.transfer(vault, fee);
+        if (vault != address(0) && fee > 0) require(musdc.transfer(vault, fee), "fee failed");
         require(musdc.transfer(bettor, net), "payout failed");
         emit Redeem(marketId, bettor, net);
     }
