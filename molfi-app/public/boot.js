@@ -11,11 +11,13 @@
 })();
 
 (function () {
-  var k = "lx-chunk-reload";
   function r() {
-    if (sessionStorage.getItem(k)) return;
-    sessionStorage.setItem(k, "1");
     var u = new URL(location.href);
+    // One-shot cache-bust: the presence of `_lx` in the URL is a persistent
+    // marker that survives the reload (we replace to a URL that carries it). If
+    // it's already there we've reloaded once — never reload again, so a runtime
+    // error that keeps matching ok() below can't thrash the page in a loop.
+    if (u.searchParams.has("_lx")) return;
     u.searchParams.set("_lx", Date.now());
     location.replace(u.toString());
   }
@@ -52,8 +54,5 @@
           ? e.reason
           : "";
     if (ok(m)) r();
-  });
-  window.addEventListener("load", function () {
-    sessionStorage.removeItem(k);
   });
 })();
